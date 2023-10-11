@@ -26,13 +26,26 @@ export class MediaRepository implements IMediaRepository {
   }
 
   async resize(input: string | Buffer, output: string, options: ResizeOptions): Promise<void> {
-    const chromaSubsampling = options.quality >= 80 ? '4:4:4' : '4:2:0'; // this is default in libvips (except the threshold is 90), but we need to set it manually in sharp
-    await sharp(input, { failOn: 'none' })
-      .pipelineColorspace(options.colorspace === Colorspace.SRGB ? 'srgb' : 'rgb16')
+    const buffer = await sharp(input, { failOn: 'none' })
       .resize(options.size, options.size, { fit: 'outside', withoutEnlargement: true })
       .rotate()
+      .jxl({ lossless: true })
+      .toBuffer();
+    // A second sharp instance is required for the ICC profile, as all metadata
+    // is preserved otherwise.
+    //
+    // It should be possible to do this with a single sharp instance in future.
+    // See: https://github.com/lovell/sharp/issues/3824
+    //
+    // TODO: Use a single sharp instance.
+    await sharp(buffer, { failOn: 'none' })
+      .pipelineColorspace(options.colorspace === Colorspace.SRGB ? 'srgb' : 'rgb16')
       .withMetadata({ icc: options.colorspace })
-      .toFormat(options.format, { quality: options.quality, chromaSubsampling })
+      .toFormat(options.format, {
+        quality: options.quality,
+        // this is default in libvips (except the threshold is 90), but we need to set it manually in sharp
+        chromaSubsampling: options.quality >= 80 ? '4:4:4' : '4:2:0',
+      })
       .toFile(output);
   }
 
