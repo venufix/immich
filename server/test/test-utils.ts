@@ -70,6 +70,8 @@ export async function createTestApp(runJobs = false, log = false): Promise<INest
 
 export const runAllTests: boolean = process.env.IMMICH_RUN_ALL_TESTS === 'true';
 
+export const itif = (condition: boolean) => (condition ? it : it.skip);
+
 const directoryExists = async (dirPath: string) =>
   await fs.promises
     .access(dirPath)
