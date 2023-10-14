@@ -29,7 +29,7 @@ export class MediaRepository implements IMediaRepository {
     const buffer = await sharp(input, { failOn: 'none' })
       .resize(options.size, options.size, { fit: 'outside', withoutEnlargement: true })
       .rotate()
-      .jxl({ lossless: true })
+      .tiff()
       .toBuffer();
     // A second sharp instance is required for the ICC profile, as all metadata
     // is preserved otherwise.

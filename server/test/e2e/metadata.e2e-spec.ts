@@ -23,7 +23,7 @@ describe(`${AssetController.name} (e2e)`, () => {
   let admin: LoginResponseDto;
 
   beforeAll(async () => {
-    app = await createTestApp(true);
+    app = await createTestApp(true, true);
     server = app.getHttpServer();
   });
 
@@ -62,7 +62,9 @@ describe(`${AssetController.name} (e2e)`, () => {
       const assetWithLocation = assets[0];
 
       expect(assetWithLocation).toEqual(
-        expect.objectContaining({ exifInfo: expect.objectContaining({ latitude: 1, longitude: 1 }) }),
+        expect.objectContaining({
+          exifInfo: expect.objectContaining({ latitude: 39.115, longitude: -108.400968333333 }),
+        }),
       );
 
       const assetId = assetWithLocation.id;
