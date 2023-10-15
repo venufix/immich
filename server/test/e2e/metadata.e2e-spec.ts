@@ -1,10 +1,10 @@
-import { LoginResponseDto } from '@app/domain';
+import { AssetResponseDto, LoginResponseDto } from '@app/domain';
 import { AssetController } from '@app/immich';
 import { INestApplication } from '@nestjs/common';
 import { api } from '@test/api';
 import * as fs from 'fs';
 
-import { LibraryType } from '@app/infra/entities';
+import { AssetEntity, LibraryType } from '@app/infra/entities';
 import {
   IMMICH_TEST_ASSET_PATH,
   IMMICH_TEST_ASSET_TEMP_PATH,
@@ -23,7 +23,7 @@ describe(`${AssetController.name} (e2e)`, () => {
   let admin: LoginResponseDto;
 
   beforeAll(async () => {
-    app = await createTestApp(true, true);
+    app = await createTestApp(true);
     server = app.getHttpServer();
   });
 
@@ -40,8 +40,10 @@ describe(`${AssetController.name} (e2e)`, () => {
     await restoreTempFolder();
   });
 
-  describe.only('Thumbnail metadata', () => {
-    itif(runAllTests)('should strip metadata of thumbnails', async () => {
+  describe.only('should strip metadata of', () => {
+    let assetWithLocation: AssetResponseDto;
+
+    beforeEach(async () => {
       await fs.promises.cp(
         `${IMMICH_TEST_ASSET_PATH}/metadata/gps-position/thompson-springs.jpg`,
         `${IMMICH_TEST_ASSET_TEMP_PATH}/thompson-springs.jpg`,
@@ -59,23 +61,34 @@ describe(`${AssetController.name} (e2e)`, () => {
       const assets = await api.assetApi.getAllAssets(server, admin.accessToken);
 
       expect(assets).toHaveLength(1);
-      const assetWithLocation = assets[0];
+      assetWithLocation = assets[0];
 
       expect(assetWithLocation).toEqual(
         expect.objectContaining({
           exifInfo: expect.objectContaining({ latitude: 39.115, longitude: -108.400968333333 }),
         }),
       );
+    });
 
+    itif(runAllTests)('small webp thumbnails', async () => {
       const assetId = assetWithLocation.id;
 
-      const { status, body } = await request(server)
-        .get(`/asset/thumbnail/${assetId}`)
-        .set('Authorization', `Bearer ${admin.accessToken}`);
+      const thumbnail =await api.assetApi.getWebpThumbnail(server, admin.accessToken, assetId);
 
-      expect(status).toBe(200);
+       await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`, thumbnail);
 
-      await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`, body);
+      const strippedAsset = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`);
+
+      expect(strippedAsset).not.toHaveProperty('GPSLongitude');
+      expect(strippedAsset).not.toHaveProperty('GPSLatitude');
+    });
+
+    itif(runAllTests)('large jpeg thumbnails', async () => {
+      const assetId = assetWithLocation.id;
+
+      const thumbnail = await api.assetApi.getJpegThumbnail(server, admin.accessToken, assetId);
+
+      await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`, thumbnail);
 
       const strippedAsset = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`);
 
