@@ -44,19 +44,11 @@ describe(`${AssetController.name} (e2e)`, () => {
     let assetWithLocation: AssetResponseDto;
 
     beforeEach(async () => {
-      await fs.promises.cp(
+      const fileContent = await fs.promises.readFile(
         `${IMMICH_TEST_ASSET_PATH}/metadata/gps-position/thompson-springs.jpg`,
-        `${IMMICH_TEST_ASSET_TEMP_PATH}/thompson-springs.jpg`,
       );
 
-      const library = await api.libraryApi.create(server, admin.accessToken, {
-        type: LibraryType.EXTERNAL,
-        importPaths: [`${IMMICH_TEST_ASSET_TEMP_PATH}`],
-      });
-
-      await api.userApi.setExternalPath(server, admin.accessToken, admin.userId, '/');
-
-      await api.libraryApi.scanLibrary(server, admin.accessToken, library.id);
+      await api.assetApi.upload(server, admin.accessToken, 'test-asset-id', { content: fileContent });
 
       const assets = await api.assetApi.getAllAssets(server, admin.accessToken);
 
@@ -73,14 +65,14 @@ describe(`${AssetController.name} (e2e)`, () => {
     itif(runAllTests)('small webp thumbnails', async () => {
       const assetId = assetWithLocation.id;
 
-      const thumbnail =await api.assetApi.getWebpThumbnail(server, admin.accessToken, assetId);
+      const thumbnail = await api.assetApi.getWebpThumbnail(server, admin.accessToken, assetId);
 
-       await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`, thumbnail);
+      await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`, thumbnail);
 
-      const strippedAsset = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`);
+      const exifData = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.webp`);
 
-      expect(strippedAsset).not.toHaveProperty('GPSLongitude');
-      expect(strippedAsset).not.toHaveProperty('GPSLatitude');
+      expect(exifData).not.toHaveProperty('GPSLongitude');
+      expect(exifData).not.toHaveProperty('GPSLatitude');
     });
 
     itif(runAllTests)('large jpeg thumbnails', async () => {
@@ -90,10 +82,12 @@ describe(`${AssetController.name} (e2e)`, () => {
 
       await fs.promises.writeFile(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`, thumbnail);
 
-      const strippedAsset = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`);
+      const exifData = await exiftool.read(`${IMMICH_TEST_ASSET_TEMP_PATH}/thumbnail.jpg`);
 
-      expect(strippedAsset).not.toHaveProperty('GPSLongitude');
-      expect(strippedAsset).not.toHaveProperty('GPSLatitude');
+      console.log(assetWithLocation);
+
+      expect(exifData).not.toHaveProperty('GPSLongitude');
+      expect(exifData).not.toHaveProperty('GPSLatitude');
     });
   });
 });
