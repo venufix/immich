@@ -4,7 +4,6 @@ import { INestApplication } from '@nestjs/common';
 import { api } from '@test/api';
 import * as fs from 'fs';
 
-import { AssetEntity, LibraryType } from '@app/infra/entities';
 import {
   IMMICH_TEST_ASSET_PATH,
   IMMICH_TEST_ASSET_TEMP_PATH,
@@ -15,7 +14,6 @@ import {
   runAllTests,
 } from '@test/test-utils';
 import { exiftool } from 'exiftool-vendored';
-import request from 'supertest';
 
 describe(`${AssetController.name} (e2e)`, () => {
   let app: INestApplication;
