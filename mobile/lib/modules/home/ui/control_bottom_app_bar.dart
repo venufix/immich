@@ -15,7 +15,8 @@ class ControlBottomAppBar extends ConsumerWidget {
   final void Function() onShare;
   final void Function() onFavorite;
   final void Function() onArchive;
-  final void Function(bool localOnly) onDelete;
+  final void Function() onDelete;
+  final void Function() onDeleteLocal;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
@@ -31,6 +32,7 @@ class ControlBottomAppBar extends ConsumerWidget {
     required this.onFavorite,
     required this.onArchive,
     required this.onDelete,
+    required this.onDeleteLocal,
     required this.sharedAlbums,
     required this.albums,
     required this.onAddToAlbum,
@@ -80,12 +82,12 @@ class ControlBottomAppBar extends ConsumerWidget {
                       context: context,
                       builder: (BuildContext context) {
                         return DeleteDialog(
-                          onDelete: () => onDelete(false),
+                          onDelete: onDelete,
                         );
                       },
                     );
                   } else {
-                    onDelete(false);
+                    onDelete();
                   }
                 }
               : null,
@@ -103,7 +105,7 @@ class ControlBottomAppBar extends ConsumerWidget {
                         builder: (BuildContext context) {
                           return DeleteDialog(
                             content: 'delete_dialog_alert_local',
-                            onDelete: () => onDelete(true),
+                            onDelete: onDeleteLocal,
                           );
                         },
                       );
