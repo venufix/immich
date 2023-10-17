@@ -84,7 +84,9 @@ class HomePage extends HookConsumerWidget {
         selectionEnabledHook.value = multiselect;
         selection.value = selectedAssets;
         selectionAssetState.value = selectedAssets.any((e) => e.isRemote)
-            ? AssetState.remote
+            ? selectedAssets.any((e) => e.isLocal)
+                ? AssetState.merged
+                : AssetState.remote
             : AssetState.local;
       }
 
@@ -144,7 +146,6 @@ class HomePage extends HookConsumerWidget {
           await ref
               .read(assetProvider.notifier)
               .deleteAssets(selection.value, force: !trashEnabled);
-
           final hasRemote = selection.value.any((a) => a.isRemote);
           final assetOrAssets = selection.value.length > 1 ? 'assets' : 'asset';
           final trashOrRemoved =
@@ -153,6 +154,28 @@ class HomePage extends HookConsumerWidget {
             ImmichToast.show(
               context: context,
               msg: '${selection.value.length} $assetOrAssets $trashOrRemoved',
+              gravity: ToastGravity.BOTTOM,
+            );
+          }
+          selectionEnabledHook.value = false;
+        } finally {
+          processing.value = false;
+        }
+      }
+
+      void onDeleteLocal() async {
+        processing.value = true;
+        try {
+          final isDeleted = await ref
+              .read(assetProvider.notifier)
+              .deleteLocalAssets(selection.value);
+          if (isDeleted) {
+            final assetOrAssets =
+                selection.value.length > 1 ? 'assets' : 'asset';
+            ImmichToast.show(
+              context: context,
+              msg:
+                  '${selection.value.length} $assetOrAssets deleted permanently from your device',
               gravity: ToastGravity.BOTTOM,
             );
           }
@@ -331,7 +354,8 @@ class HomePage extends HookConsumerWidget {
                 onShare: onShareAssets,
                 onFavorite: onFavoriteAssets,
                 onArchive: onArchiveAsset,
-                onDelete: onDelete,
+                onDelete: (bool localOnly) =>
+                    localOnly ? onDeleteLocal() : onDelete(),
                 onAddToAlbum: onAddToAlbum,
                 albums: albums,
                 sharedAlbums: sharedAlbums,

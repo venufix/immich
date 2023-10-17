@@ -43,6 +43,8 @@ class ControlBoxButton extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(fontSize: 12.0),
+            maxLines: 2,
+            textAlign: TextAlign.center,
           ),
         ],
       ),

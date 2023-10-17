@@ -15,7 +15,7 @@ class ControlBottomAppBar extends ConsumerWidget {
   final void Function() onShare;
   final void Function() onFavorite;
   final void Function() onArchive;
-  final void Function() onDelete;
+  final void Function(bool localOnly) onDelete;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
@@ -43,69 +43,90 @@ class ControlBottomAppBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    var hasRemote = selectionAssetState == AssetState.remote;
+    var hasRemote = selectionAssetState == AssetState.remote ||
+        selectionAssetState == AssetState.merged;
+    var hasMerged = selectionAssetState == AssetState.merged;
     final trashEnabled =
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
 
-    Widget renderActionButtons() {
-      return Row(
-        children: [
+    List<Widget> renderActionButtons() {
+      return [
+        ControlBoxButton(
+          iconData: Platform.isAndroid
+              ? Icons.share_rounded
+              : Icons.ios_share_rounded,
+          label: "control_bottom_app_bar_share".tr(),
+          onPressed: enabled ? onShare : null,
+        ),
+        if (hasRemote)
           ControlBoxButton(
-            iconData: Platform.isAndroid
-                ? Icons.share_rounded
-                : Icons.ios_share_rounded,
-            label: "control_bottom_app_bar_share".tr(),
-            onPressed: enabled ? onShare : null,
+            iconData: Icons.archive_outlined,
+            label: "control_bottom_app_bar_archive".tr(),
+            onPressed: enabled ? onArchive : null,
           ),
-          if (hasRemote)
-            ControlBoxButton(
-              iconData: Icons.archive,
-              label: "control_bottom_app_bar_archive".tr(),
-              onPressed: enabled ? onArchive : null,
-            ),
-          if (hasRemote)
-            ControlBoxButton(
-              iconData: Icons.favorite_border_rounded,
-              label: "control_bottom_app_bar_favorite".tr(),
-              onPressed: enabled ? onFavorite : null,
-            ),
+        if (hasRemote)
           ControlBoxButton(
-            iconData: Icons.delete_outline_rounded,
-            label: "control_bottom_app_bar_delete".tr(),
-            onPressed: enabled
-                ? () {
-                    if (!trashEnabled) {
+            iconData: Icons.favorite_border_rounded,
+            label: "control_bottom_app_bar_favorite".tr(),
+            onPressed: enabled ? onFavorite : null,
+          ),
+        ControlBoxButton(
+          iconData: Icons.delete_outline_rounded,
+          label: "control_bottom_app_bar_delete".tr(),
+          onPressed: enabled
+              ? () {
+                  if (!trashEnabled) {
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return DeleteDialog(
+                          onDelete: () => onDelete(false),
+                        );
+                      },
+                    );
+                  } else {
+                    onDelete(false);
+                  }
+                }
+              : null,
+        ),
+        if (hasMerged)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 100),
+            child: ControlBoxButton(
+              iconData: Icons.no_cell_rounded,
+              label: "control_bottom_app_bar_delete_from_local".tr(),
+              onPressed: enabled
+                  ? () {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
                           return DeleteDialog(
-                            onDelete: onDelete,
+                            content: 'delete_dialog_alert_local',
+                            onDelete: () => onDelete(true),
                           );
                         },
                       );
-                    } else {
-                      onDelete();
                     }
-                  }
-                : null,
-          ),
-          if (!hasRemote)
-            ControlBoxButton(
-              iconData: Icons.backup_outlined,
-              label: "Upload",
-              onPressed: enabled
-                  ? () => showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return UploadDialog(
-                            onUpload: onUpload,
-                          );
-                        },
-                      )
                   : null,
             ),
-        ],
-      );
+          ),
+        if (!hasRemote)
+          ControlBoxButton(
+            iconData: Icons.backup_outlined,
+            label: "Upload",
+            onPressed: enabled
+                ? () => showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return UploadDialog(
+                          onUpload: onUpload,
+                        );
+                      },
+                    )
+                : null,
+          ),
+      ];
     }
 
     return DraggableScrollableSheet(
@@ -137,7 +158,13 @@ class ControlBottomAppBar extends ConsumerWidget {
                     const SizedBox(height: 12),
                     const CustomDraggingHandle(),
                     const SizedBox(height: 12),
-                    renderActionButtons(),
+                    SizedBox(
+                      height: hasMerged ? 90 : 75,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: renderActionButtons(),
+                      ),
+                    ),
                     if (hasRemote)
                       const Divider(
                         indent: 16,
