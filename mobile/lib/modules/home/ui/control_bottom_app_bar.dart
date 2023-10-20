@@ -16,7 +16,7 @@ class ControlBottomAppBar extends ConsumerWidget {
   final void Function() onFavorite;
   final void Function() onArchive;
   final void Function() onDelete;
-  final void Function() onDeleteLocal;
+  final void Function(bool onlyMerged) onDeleteLocal;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
@@ -47,7 +47,8 @@ class ControlBottomAppBar extends ConsumerWidget {
     var isDarkMode = Theme.of(context).brightness == Brightness.dark;
     var hasRemote = selectionAssetState == AssetState.remote ||
         selectionAssetState == AssetState.merged;
-    var hasMerged = selectionAssetState == AssetState.merged;
+    var hasLocal = selectionAssetState == AssetState.merged ||
+        selectionAssetState == AssetState.local;
     final trashEnabled =
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
 
@@ -72,27 +73,28 @@ class ControlBottomAppBar extends ConsumerWidget {
             label: "control_bottom_app_bar_favorite".tr(),
             onPressed: enabled ? onFavorite : null,
           ),
-        ControlBoxButton(
-          iconData: Icons.delete_outline_rounded,
-          label: "control_bottom_app_bar_delete".tr(),
-          onPressed: enabled
-              ? () {
-                  if (!trashEnabled) {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return DeleteDialog(
-                          onDelete: onDelete,
-                        );
-                      },
-                    );
-                  } else {
-                    onDelete();
+        if (hasRemote)
+          ControlBoxButton(
+            iconData: Icons.delete_outline_rounded,
+            label: "control_bottom_app_bar_delete".tr(),
+            onPressed: enabled
+                ? () {
+                    if (!trashEnabled) {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return DeleteDialog(
+                            onDelete: onDelete,
+                          );
+                        },
+                      );
+                    } else {
+                      onDelete();
+                    }
                   }
-                }
-              : null,
-        ),
-        if (hasMerged)
+                : null,
+          ),
+        if (hasLocal)
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 100),
             child: ControlBoxButton(
@@ -103,8 +105,7 @@ class ControlBottomAppBar extends ConsumerWidget {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return DeleteDialog(
-                            content: 'delete_dialog_alert_local',
+                          return DeleteLocalDialog(
                             onDelete: onDeleteLocal,
                           );
                         },
@@ -161,7 +162,7 @@ class ControlBottomAppBar extends ConsumerWidget {
                     const CustomDraggingHandle(),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: hasMerged ? 90 : 75,
+                      height: hasLocal ? 90 : 75,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: renderActionButtons(),

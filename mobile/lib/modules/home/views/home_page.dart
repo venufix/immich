@@ -163,22 +163,20 @@ class HomePage extends HookConsumerWidget {
         }
       }
 
-      void onDeleteLocal() async {
+      void onDeleteLocal(bool onlyMerged) async {
         processing.value = true;
         try {
-          final mergedIds = selection.value
-              .where((a) => a.storage == AssetState.merged)
-              .toList();
+          final localIds = selection.value.where((a) => a.isLocal).toList();
 
           final isDeleted = await ref
               .read(assetProvider.notifier)
-              .deleteLocalAssets(mergedIds);
+              .deleteLocalAssets(localIds, onlyMerged: onlyMerged);
           if (isDeleted) {
-            final assetOrAssets = mergedIds.length > 1 ? 'assets' : 'asset';
+            final assetOrAssets = localIds.length > 1 ? 'assets' : 'asset';
             ImmichToast.show(
               context: context,
               msg:
-                  '${mergedIds.length} $assetOrAssets removed permanently from your device',
+                  '${localIds.length} $assetOrAssets removed permanently from your device',
               gravity: ToastGravity.BOTTOM,
             );
           }

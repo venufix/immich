@@ -144,6 +144,7 @@
   "date_format": "E, LLL d, y • h:mm a",
   "delete_dialog_alert": "These items will be permanently deleted from Immich and from your device",
   "delete_dialog_alert_local": "These items will be permanently removed from your device",
+  "delete_dialog_alert_merged_only": "Delete only backed up assets",
   "delete_dialog_cancel": "Cancel",
   "delete_dialog_ok": "Delete",
   "delete_dialog_title": "Delete Permanently",
