@@ -1,18 +1,16 @@
-import 'dart:io';
-
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/modules/album/ui/add_to_album_sliverlist.dart';
+import 'package:immich_mobile/modules/home/models/selection_state.dart';
 import 'package:immich_mobile/modules/home/ui/delete_dialog.dart';
 import 'package:immich_mobile/modules/home/ui/upload_dialog.dart';
-import 'package:immich_mobile/shared/models/asset.dart';
 import 'package:immich_mobile/shared/providers/server_info.provider.dart';
 import 'package:immich_mobile/shared/ui/drag_sheet.dart';
 import 'package:immich_mobile/shared/models/album.dart';
 
 class ControlBottomAppBar extends ConsumerWidget {
-  final void Function() onShare;
+  final void Function(bool shareLocal) onShare;
   final void Function() onFavorite;
   final void Function() onArchive;
   final void Function() onDelete;
@@ -20,11 +18,12 @@ class ControlBottomAppBar extends ConsumerWidget {
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
+  final void Function() onStack;
 
   final List<Album> albums;
   final List<Album> sharedAlbums;
   final bool enabled;
-  final AssetState selectionAssetState;
+  final SelectionAssetState selectionAssetState;
 
   const ControlBottomAppBar({
     Key? key,
@@ -38,32 +37,37 @@ class ControlBottomAppBar extends ConsumerWidget {
     required this.onAddToAlbum,
     required this.onCreateNewAlbum,
     required this.onUpload,
-    this.selectionAssetState = AssetState.remote,
+    required this.onStack,
+    this.selectionAssetState = const SelectionAssetState(),
     this.enabled = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     var isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    var hasRemote = selectionAssetState == AssetState.remote ||
-        selectionAssetState == AssetState.merged;
-    var hasLocal = selectionAssetState == AssetState.merged ||
-        selectionAssetState == AssetState.local;
+    var hasRemote =
+        selectionAssetState.hasRemote || selectionAssetState.hasMerged;
+    var hasLocal =
+        selectionAssetState.hasLocal || selectionAssetState.hasMerged;
     final trashEnabled =
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
 
     List<Widget> renderActionButtons() {
       return [
+        if (hasRemote)
+          ControlBoxButton(
+            iconData: Icons.share_rounded,
+            label: "control_bottom_app_bar_share".tr(),
+            onPressed: enabled ? () => onShare(false) : null,
+          ),
         ControlBoxButton(
-          iconData: Platform.isAndroid
-              ? Icons.share_rounded
-              : Icons.ios_share_rounded,
-          label: "control_bottom_app_bar_share".tr(),
-          onPressed: enabled ? onShare : null,
+          iconData: Icons.ios_share_rounded,
+          label: "control_bottom_app_bar_share_to".tr(),
+          onPressed: enabled ? () => onShare(true) : null,
         ),
         if (hasRemote)
           ControlBoxButton(
-            iconData: Icons.archive_outlined,
+            iconData: Icons.archive,
             label: "control_bottom_app_bar_archive".tr(),
             onPressed: enabled ? onArchive : null,
           ),
@@ -114,6 +118,12 @@ class ControlBottomAppBar extends ConsumerWidget {
                   : null,
             ),
           ),
+        if (!hasLocal)
+          ControlBoxButton(
+            iconData: Icons.filter_none_rounded,
+            label: "control_bottom_app_bar_stack".tr(),
+            onPressed: enabled ? onStack : null,
+          ),
         if (!hasRemote)
           ControlBoxButton(
             iconData: Icons.backup_outlined,
@@ -135,7 +145,7 @@ class ControlBottomAppBar extends ConsumerWidget {
     return DraggableScrollableSheet(
       initialChildSize: hasRemote ? 0.30 : 0.18,
       minChildSize: 0.18,
-      maxChildSize: hasRemote ? 0.57 : 0.18,
+      maxChildSize: hasRemote ? 0.60 : 0.18,
       snap: true,
       builder: (
         BuildContext context,
@@ -191,10 +201,6 @@ class ControlBottomAppBar extends ConsumerWidget {
                     enabled: enabled,
                   ),
                 ),
-              if (hasRemote)
-                const SliverToBoxAdapter(
-                  child: SizedBox(height: 200),
-                ),
             ],
           ),
         );
@@ -227,7 +233,10 @@ class AddToAlbumTitleRow extends StatelessWidget {
           ).tr(),
           TextButton.icon(
             onPressed: onCreateNewAlbum,
-            icon: const Icon(Icons.add),
+            icon: Icon(
+              Icons.add,
+              color: Theme.of(context).primaryColor,
+            ),
             label: Text(
               "common_create_new_album",
               style: TextStyle(
