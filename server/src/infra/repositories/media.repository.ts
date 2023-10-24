@@ -6,6 +6,7 @@ import fs from 'fs/promises';
 import sharp from 'sharp';
 import { Writable } from 'stream';
 import { promisify } from 'util';
+import { exiftool, Tags, WriteTags } from 'exiftool-vendored';
 
 const probe = promisify<string, FfprobeData>(ffmpeg.ffprobe);
 sharp.concurrency(0);
@@ -26,20 +27,10 @@ export class MediaRepository implements IMediaRepository {
   }
 
   async resize(input: string | Buffer, output: string, options: ResizeOptions): Promise<void> {
-    const buffer = await sharp(input, { failOn: 'none' })
+    await sharp(input, { failOn: 'none' })
+      .pipelineColorspace(options.colorspace === Colorspace.SRGB ? 'srgb' : 'rgb16')
       .resize(options.size, options.size, { fit: 'outside', withoutEnlargement: true })
       .rotate()
-      .jxl({ lossless: true })
-      .toBuffer();
-    // A second sharp instance is required for the ICC profile, as all metadata
-    // is preserved otherwise.
-    //
-    // It should be possible to do this with a single sharp instance in future.
-    // See: https://github.com/lovell/sharp/issues/3824
-    //
-    // TODO: Use a single sharp instance.
-    await sharp(buffer, { failOn: 'none' })
-      .pipelineColorspace(options.colorspace === Colorspace.SRGB ? 'srgb' : 'rgb16')
       .withMetadata({ icc: options.colorspace })
       .toFormat(options.format, {
         quality: options.quality,
@@ -47,6 +38,8 @@ export class MediaRepository implements IMediaRepository {
         chromaSubsampling: options.quality >= 80 ? '4:4:4' : '4:2:0',
       })
       .toFile(output);
+
+    await exiftool.write(output, {EXIF: null} as any as WriteTags, ['-g', '-overwrite_original']);
   }
 
   async probe(input: string): Promise<VideoInfo> {
