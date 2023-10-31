@@ -11,13 +11,12 @@ import {
   newCryptoRepositoryMock,
   newJobRepositoryMock,
   newLibraryRepositoryMock,
-  newMoveRepositoryMock,
-  newPersonRepositoryMock,
   newStorageRepositoryMock,
   newUserRepositoryMock,
   userStub,
 } from '@test';
 import { when } from 'jest-when';
+import { Readable } from 'stream';
 import { AuthUserDto } from '../auth';
 import { JobName } from '../job';
 import {
@@ -26,8 +25,6 @@ import {
   ICryptoRepository,
   IJobRepository,
   ILibraryRepository,
-  IMoveRepository,
-  IPersonRepository,
   IStorageRepository,
   IUserRepository,
 } from '../repositories';
@@ -139,8 +136,6 @@ describe(UserService.name, () => {
   let assetMock: jest.Mocked<IAssetRepository>;
   let jobMock: jest.Mocked<IJobRepository>;
   let libraryMock: jest.Mocked<ILibraryRepository>;
-  let moveMock: jest.Mocked<IMoveRepository>;
-  let personMock: jest.Mocked<IPersonRepository>;
   let storageMock: jest.Mocked<IStorageRepository>;
 
   beforeEach(async () => {
@@ -149,27 +144,13 @@ describe(UserService.name, () => {
     cryptoRepositoryMock = newCryptoRepositoryMock();
     jobMock = newJobRepositoryMock();
     libraryMock = newLibraryRepositoryMock();
-    moveMock = newMoveRepositoryMock();
-    personMock = newPersonRepositoryMock();
     storageMock = newStorageRepositoryMock();
     userMock = newUserRepositoryMock();
 
-    sut = new UserService(
-      albumMock,
-      assetMock,
-      cryptoRepositoryMock,
-      jobMock,
-      libraryMock,
-      moveMock,
-      personMock,
-      storageMock,
-      userMock,
-    );
+    sut = new UserService(albumMock, assetMock, cryptoRepositoryMock, jobMock, libraryMock, storageMock, userMock);
 
     when(userMock.get).calledWith(adminUser.id).mockResolvedValue(adminUser);
-    when(userMock.get).calledWith(adminUser.id, undefined).mockResolvedValue(adminUser);
     when(userMock.get).calledWith(immichUser.id).mockResolvedValue(immichUser);
-    when(userMock.get).calledWith(immichUser.id, undefined).mockResolvedValue(immichUser);
   });
 
   describe('getAll', () => {
@@ -225,7 +206,7 @@ describe(UserService.name, () => {
 
       const response = await sut.getMe(adminUser);
 
-      expect(userMock.get).toHaveBeenCalledWith(adminUser.id, undefined);
+      expect(userMock.get).toHaveBeenCalledWith(adminUser.id);
       expect(response).toEqual(adminUserResponse);
     });
 
@@ -234,25 +215,7 @@ describe(UserService.name, () => {
 
       await expect(sut.getMe(adminUser)).rejects.toBeInstanceOf(BadRequestException);
 
-      expect(userMock.get).toHaveBeenCalledWith(adminUser.id, undefined);
-    });
-  });
-
-  describe('getCount', () => {
-    it('should get the user count', async () => {
-      userMock.getList.mockResolvedValue([adminUser]);
-
-      const response = await sut.getCount({});
-
-      expect(userMock.getList).toHaveBeenCalled();
-      expect(response).toEqual({ userCount: 1 });
-    });
-
-    it('should get the user count of all admin users', async () => {
-      userMock.getList.mockResolvedValue([adminUser, immichUser]);
-
-      await expect(sut.getCount({ admin: true })).resolves.toEqual({ userCount: 1 });
-      expect(userMock.getList).toHaveBeenCalled();
+      expect(userMock.get).toHaveBeenCalledWith(adminUser.id);
     });
   });
 
@@ -292,7 +255,7 @@ describe(UserService.name, () => {
 
     it('user can only update its information', async () => {
       when(userMock.get)
-        .calledWith('not_immich_auth_user_id', undefined)
+        .calledWith('not_immich_auth_user_id')
         .mockResolvedValueOnce({
           ...immichUser,
           id: 'not_immich_auth_user_id',
@@ -357,7 +320,7 @@ describe(UserService.name, () => {
     });
 
     it('update user information should throw error if user not found', async () => {
-      when(userMock.get).calledWith(immichUser.id, undefined).mockResolvedValueOnce(null);
+      when(userMock.get).calledWith(immichUser.id).mockResolvedValueOnce(null);
 
       const result = sut.update(adminUser, {
         id: immichUser.id,
@@ -370,7 +333,6 @@ describe(UserService.name, () => {
     it('should let the admin update himself', async () => {
       const dto = { id: adminUser.id, shouldChangePassword: true, isAdmin: true };
 
-      when(userMock.get).calledWith(adminUser.id).mockResolvedValueOnce(null);
       when(userMock.update).calledWith(adminUser.id, dto).mockResolvedValueOnce(adminUser);
 
       await sut.update(adminUser, dto);
@@ -434,7 +396,7 @@ describe(UserService.name, () => {
       userMock.delete.mockResolvedValue(immichUser);
 
       await expect(sut.delete(adminUserAuth, immichUser.id)).resolves.toEqual(mapUser(immichUser));
-      expect(userMock.get).toHaveBeenCalledWith(immichUser.id, undefined);
+      expect(userMock.get).toHaveBeenCalledWith(immichUser.id);
       expect(userMock.delete).toHaveBeenCalledWith(immichUser);
     });
   });
@@ -500,9 +462,9 @@ describe(UserService.name, () => {
     it('should throw an error if the user does not exist', async () => {
       userMock.get.mockResolvedValue(null);
 
-      await expect(sut.getProfileImage(adminUserAuth.id)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(sut.getProfileImage(adminUserAuth.id)).rejects.toBeInstanceOf(BadRequestException);
 
-      expect(userMock.get).toHaveBeenCalledWith(adminUserAuth.id, undefined);
+      expect(userMock.get).toHaveBeenCalledWith(adminUserAuth.id);
     });
 
     it('should throw an error if the user does not have a picture', async () => {
@@ -510,7 +472,19 @@ describe(UserService.name, () => {
 
       await expect(sut.getProfileImage(adminUserAuth.id)).rejects.toBeInstanceOf(NotFoundException);
 
-      expect(userMock.get).toHaveBeenCalledWith(adminUserAuth.id, undefined);
+      expect(userMock.get).toHaveBeenCalledWith(adminUserAuth.id);
+    });
+
+    it('should return the profile picture', async () => {
+      const stream = new Readable();
+
+      userMock.get.mockResolvedValue(userStub.profilePath);
+      storageMock.createReadStream.mockResolvedValue({ stream });
+
+      await expect(sut.getProfileImage(userStub.profilePath.id)).resolves.toEqual({ stream });
+
+      expect(userMock.get).toHaveBeenCalledWith(userStub.profilePath.id);
+      expect(storageMock.createReadStream).toHaveBeenCalledWith('/path/to/profile.jpg', 'image/jpeg');
     });
   });
 

@@ -72,6 +72,7 @@ class _$AppRouter extends RootStackRouter {
           totalAssets: args.totalAssets,
           heroOffset: args.heroOffset,
           showStack: args.showStack,
+          isOwner: args.isOwner,
         ),
       );
     },
@@ -230,12 +231,9 @@ class _$AppRouter extends RootStackRouter {
       );
     },
     AppLogRoute.name: (routeData) {
-      return CustomPage<dynamic>(
+      return MaterialPageX<dynamic>(
         routeData: routeData,
         child: const AppLogPage(),
-        transitionsBuilder: TransitionsBuilders.slideBottom,
-        opaque: true,
-        barrierDismissible: false,
       );
     },
     AppLogDetailRoute.name: (routeData) {
@@ -582,6 +580,7 @@ class _$AppRouter extends RootStackRouter {
         RouteConfig(
           AppLogRoute.name,
           path: '/app-log-page',
+          guards: [duplicateGuard],
         ),
         RouteConfig(
           AppLogDetailRoute.name,
@@ -749,6 +748,7 @@ class GalleryViewerRoute extends PageRouteInfo<GalleryViewerRouteArgs> {
     required int totalAssets,
     int heroOffset = 0,
     bool showStack = false,
+    bool isOwner = true,
   }) : super(
           GalleryViewerRoute.name,
           path: '/gallery-viewer-page',
@@ -759,6 +759,7 @@ class GalleryViewerRoute extends PageRouteInfo<GalleryViewerRouteArgs> {
             totalAssets: totalAssets,
             heroOffset: heroOffset,
             showStack: showStack,
+            isOwner: isOwner,
           ),
         );
 
@@ -773,6 +774,7 @@ class GalleryViewerRouteArgs {
     required this.totalAssets,
     this.heroOffset = 0,
     this.showStack = false,
+    this.isOwner = true,
   });
 
   final Key? key;
@@ -787,9 +789,11 @@ class GalleryViewerRouteArgs {
 
   final bool showStack;
 
+  final bool isOwner;
+
   @override
   String toString() {
-    return 'GalleryViewerRouteArgs{key: $key, initialIndex: $initialIndex, loadAsset: $loadAsset, totalAssets: $totalAssets, heroOffset: $heroOffset, showStack: $showStack}';
+    return 'GalleryViewerRouteArgs{key: $key, initialIndex: $initialIndex, loadAsset: $loadAsset, totalAssets: $totalAssets, heroOffset: $heroOffset, showStack: $showStack, isOwner: $isOwner}';
   }
 }
 

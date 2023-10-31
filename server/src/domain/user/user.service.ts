@@ -1,7 +1,6 @@
 import { UserEntity } from '@app/infra/entities';
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { randomBytes } from 'crypto';
-import { ReadStream } from 'fs';
 import { AuthUserDto } from '../auth';
 import { IEntityJob, JobName } from '../job';
 import {
@@ -10,27 +9,18 @@ import {
   ICryptoRepository,
   IJobRepository,
   ILibraryRepository,
-  IMoveRepository,
-  IPersonRepository,
   IStorageRepository,
   IUserRepository,
+  ImmichReadStream,
 } from '../repositories';
 import { StorageCore, StorageFolder } from '../storage';
-import { CreateUserDto, UpdateUserDto, UserCountDto } from './dto';
-import {
-  CreateProfileImageResponseDto,
-  UserCountResponseDto,
-  UserResponseDto,
-  mapCreateProfileImageResponse,
-  mapUser,
-  mapUserCountResponse,
-} from './response-dto';
+import { CreateUserDto, UpdateUserDto } from './dto';
+import { CreateProfileImageResponseDto, UserResponseDto, mapCreateProfileImageResponse, mapUser } from './response-dto';
 import { UserCore } from './user.core';
 
 @Injectable()
 export class UserService {
   private logger = new Logger(UserService.name);
-  private storageCore: StorageCore;
   private userCore: UserCore;
 
   constructor(
@@ -39,22 +29,19 @@ export class UserService {
     @Inject(ICryptoRepository) cryptoRepository: ICryptoRepository,
     @Inject(IJobRepository) private jobRepository: IJobRepository,
     @Inject(ILibraryRepository) libraryRepository: ILibraryRepository,
-    @Inject(IMoveRepository) moveRepository: IMoveRepository,
-    @Inject(IPersonRepository) personRepository: IPersonRepository,
     @Inject(IStorageRepository) private storageRepository: IStorageRepository,
     @Inject(IUserRepository) private userRepository: IUserRepository,
   ) {
-    this.storageCore = new StorageCore(storageRepository, assetRepository, moveRepository, personRepository);
-    this.userCore = new UserCore(userRepository, libraryRepository, cryptoRepository);
+    this.userCore = UserCore.create(cryptoRepository, libraryRepository, userRepository);
   }
 
   async getAll(authUser: AuthUserDto, isAll: boolean): Promise<UserResponseDto[]> {
-    const users = await this.userCore.getList({ withDeleted: !isAll });
+    const users = await this.userRepository.getList({ withDeleted: !isAll });
     return users.map(mapUser);
   }
 
-  async get(userId: string, withDeleted = false): Promise<UserResponseDto> {
-    const user = await this.userCore.get(userId, withDeleted);
+  async get(userId: string): Promise<UserResponseDto> {
+    const user = await this.userRepository.get(userId, false);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -63,21 +50,11 @@ export class UserService {
   }
 
   async getMe(authUser: AuthUserDto): Promise<UserResponseDto> {
-    const user = await this.userCore.get(authUser.id);
+    const user = await this.userRepository.get(authUser.id);
     if (!user) {
       throw new BadRequestException('User not found');
     }
     return mapUser(user);
-  }
-
-  async getCount(dto: UserCountDto): Promise<UserCountResponseDto> {
-    let users = await this.userCore.getList();
-
-    if (dto.admin) {
-      users = users.filter((user) => user.isAdmin);
-    }
-
-    return mapUserCountResponse(users.length);
   }
 
   async create(createUserDto: CreateUserDto): Promise<UserResponseDto> {
@@ -86,7 +63,7 @@ export class UserService {
   }
 
   async update(authUser: AuthUserDto, dto: UpdateUserDto): Promise<UserResponseDto> {
-    const user = await this.userCore.get(dto.id);
+    const user = await this.userRepository.get(dto.id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -96,7 +73,7 @@ export class UserService {
   }
 
   async delete(authUser: AuthUserDto, userId: string): Promise<UserResponseDto> {
-    const user = await this.userCore.get(userId);
+    const user = await this.userRepository.get(userId);
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -106,7 +83,7 @@ export class UserService {
   }
 
   async restore(authUser: AuthUserDto, userId: string): Promise<UserResponseDto> {
-    const user = await this.userCore.get(userId, true);
+    const user = await this.userRepository.get(userId, true);
     if (!user) {
       throw new BadRequestException('User not found');
     }
@@ -119,20 +96,20 @@ export class UserService {
     authUser: AuthUserDto,
     fileInfo: Express.Multer.File,
   ): Promise<CreateProfileImageResponseDto> {
-    const updatedUser = await this.userCore.createProfileImage(authUser, fileInfo.path);
+    const updatedUser = await this.userRepository.update(authUser.id, { profileImagePath: fileInfo.path });
     return mapCreateProfileImageResponse(updatedUser.id, updatedUser.profileImagePath);
   }
 
-  async getProfileImage(userId: string): Promise<ReadStream> {
-    const user = await this.userCore.get(userId);
-    if (!user) {
-      throw new NotFoundException('User not found');
+  async getProfileImage(id: string): Promise<ImmichReadStream> {
+    const user = await this.findOrFail(id);
+    if (!user.profileImagePath) {
+      throw new NotFoundException('User does not have a profile image');
     }
-    return this.userCore.getUserProfileImage(user);
+    return this.storageRepository.createReadStream(user.profileImagePath, 'image/jpeg');
   }
 
   async resetAdminPassword(ask: (admin: UserResponseDto) => Promise<string | undefined>) {
-    const admin = await this.userCore.getAdmin();
+    const admin = await this.userRepository.getAdmin();
     if (!admin) {
       throw new BadRequestException('Admin account does not exist');
     }
@@ -171,11 +148,11 @@ export class UserService {
     this.logger.log(`Deleting user: ${user.id}`);
 
     const folders = [
-      this.storageCore.getLibraryFolder(user),
-      this.storageCore.getFolderLocation(StorageFolder.UPLOAD, user.id),
-      this.storageCore.getFolderLocation(StorageFolder.PROFILE, user.id),
-      this.storageCore.getFolderLocation(StorageFolder.THUMBNAILS, user.id),
-      this.storageCore.getFolderLocation(StorageFolder.ENCODED_VIDEO, user.id),
+      StorageCore.getLibraryFolder(user),
+      StorageCore.getFolderLocation(StorageFolder.UPLOAD, user.id),
+      StorageCore.getFolderLocation(StorageFolder.PROFILE, user.id),
+      StorageCore.getFolderLocation(StorageFolder.THUMBNAILS, user.id),
+      StorageCore.getFolderLocation(StorageFolder.ENCODED_VIDEO, user.id),
     ];
 
     for (const folder of folders) {
@@ -202,5 +179,13 @@ export class UserService {
     const msSinceDelete = new Date().getTime() - (Date.parse(user.deletedAt.toString()) || 0);
 
     return msSinceDelete >= msDeleteWait;
+  }
+
+  private async findOrFail(id: string) {
+    const user = await this.userRepository.get(id);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    return user;
   }
 }

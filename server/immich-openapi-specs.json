@@ -927,58 +927,6 @@
         ]
       }
     },
-    "/asset/check": {
-      "post": {
-        "description": "Check duplicated asset before uploading - for Web upload used",
-        "operationId": "checkDuplicateAsset",
-        "parameters": [
-          {
-            "name": "key",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CheckDuplicateAssetDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CheckDuplicateAssetResponseDto"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "tags": [
-          "Asset"
-        ]
-      }
-    },
     "/asset/curated-locations": {
       "get": {
         "operationId": "getCuratedLocations",
@@ -1894,6 +1842,14 @@
             }
           },
           {
+            "name": "withStacked",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "timeBucket",
             "required": true,
             "in": "query",
@@ -2007,6 +1963,14 @@
           },
           {
             "name": "isTrashed",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "withStacked",
             "required": false,
             "in": "query",
             "schema": {
@@ -3685,6 +3649,48 @@
         ]
       }
     },
+    "/person/{id}/statistics": {
+      "get": {
+        "operationId": "getPersonStatistics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonStatisticsResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "tags": [
+          "Person"
+        ]
+      }
+    },
     "/person/{id}/thumbnail": {
       "get": {
         "operationId": "getPersonThumbnail",
@@ -3947,6 +3953,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "withHidden",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -4128,6 +4142,27 @@
         ]
       }
     },
+    "/server-info/theme": {
+      "get": {
+        "operationId": "getTheme",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerThemeDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "Server Info"
+        ]
+      }
+    },
     "/server-info/version": {
       "get": {
         "operationId": "getServerVersion",
@@ -4228,6 +4263,23 @@
       "get": {
         "operationId": "getMySharedLink",
         "parameters": [
+          {
+            "name": "password",
+            "required": false,
+            "in": "query",
+            "example": "password",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "key",
             "required": false,
@@ -5125,48 +5177,6 @@
         ]
       }
     },
-    "/user/count": {
-      "get": {
-        "operationId": "getUserCount",
-        "parameters": [
-          {
-            "name": "admin",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": false,
-              "type": "boolean"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserCountResponseDto"
-                }
-              }
-            },
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          },
-          {
-            "cookie": []
-          },
-          {
-            "api_key": []
-          }
-        ],
-        "tags": [
-          "User"
-        ]
-      }
-    },
     "/user/info/{id}": {
       "get": {
         "operationId": "getUserById",
@@ -5414,7 +5424,7 @@
   "info": {
     "title": "Immich",
     "description": "Immich API",
-    "version": "1.82.1",
+    "version": "1.83.0",
     "contact": {}
   },
   "tags": [],
@@ -5990,6 +6000,7 @@
             "type": "array"
           },
           "stackCount": {
+            "nullable": true,
             "type": "integer"
           },
           "stackParentId": {
@@ -6216,35 +6227,6 @@
         "required": [
           "password",
           "newPassword"
-        ],
-        "type": "object"
-      },
-      "CheckDuplicateAssetDto": {
-        "properties": {
-          "deviceAssetId": {
-            "type": "string"
-          },
-          "deviceId": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "deviceAssetId",
-          "deviceId"
-        ],
-        "type": "object"
-      },
-      "CheckDuplicateAssetResponseDto": {
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "isExist": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "isExist"
         ],
         "type": "object"
       },
@@ -7401,6 +7383,17 @@
         ],
         "type": "object"
       },
+      "PersonStatisticsResponseDto": {
+        "properties": {
+          "assets": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "assets"
+        ],
+        "type": "object"
+      },
       "PersonUpdateDto": {
         "properties": {
           "birthDate": {
@@ -7832,6 +7825,17 @@
         ],
         "type": "object"
       },
+      "ServerThemeDto": {
+        "properties": {
+          "customCss": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customCss"
+        ],
+        "type": "object"
+      },
       "ServerVersionResponseDto": {
         "properties": {
           "major": {
@@ -7881,6 +7885,9 @@
             "nullable": true,
             "type": "string"
           },
+          "password": {
+            "type": "string"
+          },
           "showMetadata": {
             "default": true,
             "type": "boolean"
@@ -7912,6 +7919,9 @@
           "expiresAt": {
             "format": "date-time",
             "nullable": true,
+            "type": "string"
+          },
+          "password": {
             "type": "string"
           },
           "showMetadata": {
@@ -7956,8 +7966,16 @@
           "key": {
             "type": "string"
           },
+          "password": {
+            "nullable": true,
+            "type": "string"
+          },
           "showMetadata": {
             "type": "boolean"
+          },
+          "token": {
+            "nullable": true,
+            "type": "string"
           },
           "type": {
             "$ref": "#/components/schemas/SharedLinkType"
@@ -7970,6 +7988,7 @@
           "type",
           "id",
           "description",
+          "password",
           "userId",
           "key",
           "createdAt",
@@ -8048,6 +8067,9 @@
           "map": {
             "$ref": "#/components/schemas/SystemConfigMapDto"
           },
+          "newVersionCheck": {
+            "$ref": "#/components/schemas/SystemConfigNewVersionCheckDto"
+          },
           "oauth": {
             "$ref": "#/components/schemas/SystemConfigOAuthDto"
           },
@@ -8060,6 +8082,9 @@
           "storageTemplate": {
             "$ref": "#/components/schemas/SystemConfigStorageTemplateDto"
           },
+          "theme": {
+            "$ref": "#/components/schemas/SystemConfigThemeDto"
+          },
           "thumbnail": {
             "$ref": "#/components/schemas/SystemConfigThumbnailDto"
           },
@@ -8071,13 +8096,15 @@
           "ffmpeg",
           "machineLearning",
           "map",
+          "newVersionCheck",
           "oauth",
           "passwordLogin",
           "reverseGeocoding",
           "storageTemplate",
           "job",
           "thumbnail",
-          "trash"
+          "trash",
+          "theme"
         ],
         "type": "object"
       },
@@ -8253,6 +8280,17 @@
         ],
         "type": "object"
       },
+      "SystemConfigNewVersionCheckDto": {
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "type": "object"
+      },
       "SystemConfigOAuthDto": {
         "properties": {
           "autoLaunch": {
@@ -8404,6 +8442,17 @@
         ],
         "type": "object"
       },
+      "SystemConfigThemeDto": {
+        "properties": {
+          "customCss": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customCss"
+        ],
+        "type": "object"
+      },
       "SystemConfigThumbnailDto": {
         "properties": {
           "colorspace": {
@@ -8516,6 +8565,7 @@
           "nvenc",
           "qsv",
           "vaapi",
+          "rkmpp",
           "disabled"
         ],
         "type": "string"
@@ -8674,17 +8724,6 @@
           "photos",
           "videos",
           "usage"
-        ],
-        "type": "object"
-      },
-      "UserCountResponseDto": {
-        "properties": {
-          "userCount": {
-            "type": "integer"
-          }
-        },
-        "required": [
-          "userCount"
         ],
         "type": "object"
       },

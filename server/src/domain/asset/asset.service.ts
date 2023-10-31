@@ -16,8 +16,6 @@ import {
   ICommunicationRepository,
   ICryptoRepository,
   IJobRepository,
-  IMoveRepository,
-  IPersonRepository,
   IStorageRepository,
   ISystemConfigRepository,
   ImmichReadStream,
@@ -76,7 +74,6 @@ export class AssetService {
   private logger = new Logger(AssetService.name);
   private access: AccessCore;
   private configCore: SystemConfigCore;
-  private storageCore: StorageCore;
 
   constructor(
     @Inject(IAccessRepository) accessRepository: IAccessRepository,
@@ -84,14 +81,11 @@ export class AssetService {
     @Inject(ICryptoRepository) private cryptoRepository: ICryptoRepository,
     @Inject(IJobRepository) private jobRepository: IJobRepository,
     @Inject(ISystemConfigRepository) configRepository: ISystemConfigRepository,
-    @Inject(IMoveRepository) moveRepository: IMoveRepository,
-    @Inject(IPersonRepository) personRepository: IPersonRepository,
     @Inject(IStorageRepository) private storageRepository: IStorageRepository,
     @Inject(ICommunicationRepository) private communicationRepository: ICommunicationRepository,
   ) {
-    this.access = new AccessCore(accessRepository);
+    this.access = AccessCore.create(accessRepository);
     this.configCore = SystemConfigCore.create(configRepository);
-    this.storageCore = new StorageCore(storageRepository, assetRepository, moveRepository, personRepository);
   }
 
   canUploadFile({ authUser, fieldName, file }: UploadRequest): true {
@@ -147,9 +141,9 @@ export class AssetService {
   getUploadFolder({ authUser, fieldName }: UploadRequest): string {
     authUser = this.access.requireUploadAccess(authUser);
 
-    let folder = this.storageCore.getFolderLocation(StorageFolder.UPLOAD, authUser.id);
+    let folder = StorageCore.getFolderLocation(StorageFolder.UPLOAD, authUser.id);
     if (fieldName === UploadFieldName.PROFILE_DATA) {
-      folder = this.storageCore.getFolderLocation(StorageFolder.PROFILE, authUser.id);
+      folder = StorageCore.getFolderLocation(StorageFolder.PROFILE, authUser.id);
     }
 
     this.storageRepository.mkdirSync(folder);
@@ -207,7 +201,7 @@ export class AssetService {
     await this.timeBucketChecks(authUser, dto);
     const assets = await this.assetRepository.getByTimeBucket(dto.timeBucket, dto);
     if (authUser.isShowMetadata) {
-      return assets.map((asset) => mapAsset(asset));
+      return assets.map((asset) => mapAsset(asset, { withStack: true }));
     } else {
       return assets.map((asset) => mapAsset(asset, { stripMetadata: true }));
     }
@@ -398,8 +392,10 @@ export class AssetService {
 
     if (asset.faces) {
       await Promise.all(
-        asset.faces.map(({ assetId, personId }) =>
-          this.jobRepository.queue({ name: JobName.SEARCH_REMOVE_FACE, data: { assetId, personId } }),
+        asset.faces.map(
+          ({ assetId, personId }) =>
+            personId != null &&
+            this.jobRepository.queue({ name: JobName.SEARCH_REMOVE_FACE, data: { assetId, personId } }),
         ),
       );
     }

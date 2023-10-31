@@ -21,6 +21,8 @@ export enum Permission {
   ALBUM_SHARE = 'album.share',
   ALBUM_DOWNLOAD = 'album.download',
 
+  AUTH_DEVICE_DELETE = 'authDevice.delete',
+
   ARCHIVE_READ = 'archive.read',
 
   TIMELINE_READ = 'timeline.read',
@@ -37,8 +39,22 @@ export enum Permission {
   PERSON_MERGE = 'person.merge',
 }
 
+let instance: AccessCore | null;
+
 export class AccessCore {
-  constructor(private repository: IAccessRepository) {}
+  private constructor(private repository: IAccessRepository) {}
+
+  static create(repository: IAccessRepository) {
+    if (!instance) {
+      instance = new AccessCore(repository);
+    }
+
+    return instance;
+  }
+
+  static reset() {
+    instance = null;
+  }
 
   requireUploadAccess(authUser: AuthUserDto | null): AuthUserDto {
     if (!authUser || (authUser.isPublicUser && !authUser.isAllowUpload)) {
@@ -181,6 +197,9 @@ export class AccessCore {
 
       case Permission.ARCHIVE_READ:
         return authUser.id === id;
+
+      case Permission.AUTH_DEVICE_DELETE:
+        return this.repository.authDevice.hasOwnerAccess(authUser.id, id);
 
       case Permission.TIMELINE_READ:
         return authUser.id === id || (await this.repository.timeline.hasPartnerAccess(authUser.id, id));

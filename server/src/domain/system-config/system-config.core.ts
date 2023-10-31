@@ -1,8 +1,8 @@
 import {
   AudioCodec,
-  CQMode,
   CitiesFile,
   Colorspace,
+  CQMode,
   SystemConfig,
   SystemConfigEntity,
   SystemConfigKey,
@@ -67,7 +67,7 @@ export const defaults = Object.freeze<SystemConfig>({
     },
     clip: {
       enabled: true,
-      modelName: 'ViT-B-32::openai',
+      modelName: 'ViT-B-32__openai',
     },
     facialRecognition: {
       enabled: true,
@@ -110,9 +110,15 @@ export const defaults = Object.freeze<SystemConfig>({
     quality: 80,
     colorspace: Colorspace.P3,
   },
+  newVersionCheck: {
+    enabled: true,
+  },
   trash: {
     enabled: true,
     days: 30,
+  },
+  theme: {
+    customCss: '',
   },
 });
 
