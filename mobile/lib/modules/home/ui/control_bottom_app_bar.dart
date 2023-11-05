@@ -113,7 +113,13 @@ class ControlBottomAppBar extends ConsumerWidget {
                             content: selectionAssetState.hasLocal
                                 ? "delete_dialog_alert_local_non_backed_up"
                                 : "delete_dialog_alert_local",
+                            ok: selectionAssetState.hasLocal
+                                ? "delete_dialog_ok_force"
+                                : "delete_dialog_ok",
                             onDelete: onDeleteLocal,
+                            contentColor: selectionAssetState.hasLocal
+                                ? Colors.red[400]
+                                : null,
                           );
                         },
                       );
