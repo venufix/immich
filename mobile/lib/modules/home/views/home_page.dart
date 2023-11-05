@@ -164,14 +164,14 @@ class HomePage extends HookConsumerWidget {
         }
       }
 
-      void onDeleteLocal(bool onlyMerged) async {
+      void onDeleteLocal() async {
         processing.value = true;
         try {
           final localIds = selection.value.where((a) => a.isLocal).toList();
 
           final isDeleted = await ref
               .read(assetProvider.notifier)
-              .deleteLocalAssets(localIds, onlyMerged: onlyMerged);
+              .deleteLocalAssets(localIds);
           if (isDeleted) {
             final assetOrAssets = localIds.length > 1 ? 'assets' : 'asset';
             ImmichToast.show(

@@ -14,7 +14,7 @@ class ControlBottomAppBar extends ConsumerWidget {
   final void Function() onFavorite;
   final void Function() onArchive;
   final void Function() onDelete;
-  final void Function(bool onlyMerged) onDeleteLocal;
+  final void Function() onDeleteLocal;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
@@ -109,7 +109,10 @@ class ControlBottomAppBar extends ConsumerWidget {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return DeleteLocalDialog(
+                          return DeleteDialog(
+                            content: selectionAssetState.hasLocal
+                                ? "delete_dialog_alert_local_non_backed_up"
+                                : "delete_dialog_alert_local",
                             onDelete: onDeleteLocal,
                           );
                         },
