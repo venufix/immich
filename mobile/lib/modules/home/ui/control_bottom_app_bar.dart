@@ -15,7 +15,7 @@ class ControlBottomAppBar extends ConsumerWidget {
   final void Function() onFavorite;
   final void Function() onArchive;
   final void Function() onDelete;
-  final void Function() onDeleteLocal;
+  final void Function(bool onlyMerged) onDeleteLocal;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
@@ -109,17 +109,9 @@ class ControlBottomAppBar extends ConsumerWidget {
                       showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return DeleteDialog(
-                            content: selectionAssetState.hasLocal
-                                ? "delete_dialog_alert_local_non_backed_up"
-                                : "delete_dialog_alert_local",
-                            ok: selectionAssetState.hasLocal
-                                ? "delete_dialog_ok_force"
-                                : "delete_dialog_ok",
-                            onDelete: onDeleteLocal,
-                            contentColor: selectionAssetState.hasLocal
-                                ? Colors.red[400]
-                                : null,
+                          return DeleteLocalOnlyDialog(
+                            showWarning: selectionAssetState.hasLocal,
+                            onDeleteLocal: onDeleteLocal,
                           );
                         },
                       );
@@ -214,6 +206,69 @@ class ControlBottomAppBar extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class DeleteLocalOnlyDialog extends StatelessWidget {
+  final bool showWarning;
+  final void Function(bool onlyMerged) onDeleteLocal;
+
+  const DeleteLocalOnlyDialog({
+    super.key,
+    this.showWarning = false,
+    required this.onDeleteLocal,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      title: const Text("delete_dialog_title").tr(),
+      content: Text(
+        showWarning
+            ? "delete_dialog_alert_local_non_backed_up"
+            : "delete_dialog_alert_local",
+      ).tr(),
+      actions: [
+        TextButton(
+          onPressed: () => context.pop(false),
+          child: Text(
+            "delete_dialog_cancel",
+            style: TextStyle(
+              color: context.primaryColor,
+              fontWeight: FontWeight.bold,
+            ),
+          ).tr(),
+        ),
+        if (showWarning)
+          TextButton(
+            onPressed: () {
+              context.pop(true);
+              onDeleteLocal(true);
+            },
+            child: Text(
+              "delete_local_dialog_ok_backed_up_only",
+              style: TextStyle(
+                color: showWarning ? null : Colors.red[400],
+                fontWeight: FontWeight.bold,
+              ),
+            ).tr(),
+          ),
+        TextButton(
+          onPressed: () {
+            context.pop(true);
+            onDeleteLocal(false);
+          },
+          child: Text(
+            showWarning ? "delete_local_dialog_ok_force" : "delete_dialog_ok",
+            style: TextStyle(
+              color: Colors.red[400],
+              fontWeight: FontWeight.bold,
+            ),
+          ).tr(),
+        ),
+      ],
     );
   }
 }
