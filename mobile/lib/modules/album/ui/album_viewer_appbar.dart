@@ -1,8 +1,9 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/modules/activities/providers/activity.provider.dart';
 import 'package:immich_mobile/modules/album/providers/album.provider.dart';
 import 'package:immich_mobile/modules/album/providers/album_detail.provider.dart';
 import 'package:immich_mobile/modules/album/providers/album_viewer.provider.dart';
@@ -26,6 +27,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
     required this.titleFocusNode,
     this.onAddPhotos,
     this.onAddUsers,
+    required this.onActivities,
   }) : super(key: key);
 
   final Album album;
@@ -35,11 +37,19 @@ class AlbumViewerAppbar extends HookConsumerWidget
   final FocusNode titleFocusNode;
   final Function(Album album)? onAddPhotos;
   final Function(Album album)? onAddUsers;
+  final Function(Album album) onActivities;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final newAlbumTitle = ref.watch(albumViewerProvider).editTitleText;
     final isEditAlbum = ref.watch(albumViewerProvider).isEditAlbum;
+    final comments = album.shared
+        ? ref.watch(
+            activityStatisticsStateProvider(
+              (albumId: album.remoteId!, assetId: null),
+            ),
+          )
+        : 0;
 
     deleteAlbum() async {
       ImmichLoadingOverlayController.appLoader.show();
@@ -48,12 +58,12 @@ class AlbumViewerAppbar extends HookConsumerWidget
       if (album.shared) {
         success =
             await ref.watch(sharedAlbumProvider.notifier).deleteAlbum(album);
-        AutoRouter.of(context)
-            .navigate(const TabControllerRoute(children: [SharingRoute()]));
+        context
+            .autoNavigate(const TabControllerRoute(children: [SharingRoute()]));
       } else {
         success = await ref.watch(albumProvider.notifier).deleteAlbum(album);
-        AutoRouter.of(context)
-            .navigate(const TabControllerRoute(children: [LibraryRoute()]));
+        context
+            .autoNavigate(const TabControllerRoute(children: [LibraryRoute()]));
       }
       if (!success) {
         ImmichToast.show(
@@ -83,7 +93,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                 child: Text(
                   'Cancel',
                   style: TextStyle(
-                    color: Theme.of(context).primaryColor,
+                    color: context.primaryColor,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -97,9 +107,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                   'Confirm',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).brightness == Brightness.light
-                        ? Colors.red
-                        : Colors.red[300],
+                    color: !context.isDarkTheme ? Colors.red : Colors.red[300],
                   ),
                 ),
               ),
@@ -120,8 +128,8 @@ class AlbumViewerAppbar extends HookConsumerWidget
           await ref.watch(sharedAlbumProvider.notifier).leaveAlbum(album);
 
       if (isSuccess) {
-        AutoRouter.of(context)
-            .navigate(const TabControllerRoute(children: [SharingRoute()]));
+        context
+            .autoNavigate(const TabControllerRoute(children: [SharingRoute()]));
       } else {
         Navigator.pop(context);
         ImmichToast.show(
@@ -180,7 +188,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                   gravity: ToastGravity.BOTTOM,
                 );
               }
-              Navigator.of(buildContext).pop();
+              context.pop();
             },
           );
           return const ShareDialog();
@@ -206,32 +214,36 @@ class AlbumViewerAppbar extends HookConsumerWidget
             ).tr(),
             onTap: () => onShareAssetsTo(),
           ),
-          album.ownerId == userId ? ListTile(
-            leading: const Icon(Icons.delete_sweep_rounded),
-            title: const Text(
-              'album_viewer_appbar_share_remove',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ).tr(),
-            onTap: () => onRemoveFromAlbumPressed(),
-          ) : const SizedBox(),
+          album.ownerId == userId
+              ? ListTile(
+                  leading: const Icon(Icons.delete_sweep_rounded),
+                  title: const Text(
+                    'album_viewer_appbar_share_remove',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ).tr(),
+                  onTap: () => onRemoveFromAlbumPressed(),
+                )
+              : const SizedBox(),
         ];
       } else {
         return [
-          album.ownerId == userId ? ListTile(
-            leading: const Icon(Icons.delete_forever_rounded),
-            title: const Text(
-              'album_viewer_appbar_share_delete',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ).tr(),
-            onTap: () => onDeleteAlbumPressed(),
-          ) : ListTile(
-            leading: const Icon(Icons.person_remove_rounded),
-            title: const Text(
-              'album_viewer_appbar_share_leave',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ).tr(),
-            onTap: () => onLeaveAlbumPressed(),
-          ),
+          album.ownerId == userId
+              ? ListTile(
+                  leading: const Icon(Icons.delete_forever_rounded),
+                  title: const Text(
+                    'album_viewer_appbar_share_delete',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ).tr(),
+                  onTap: () => onDeleteAlbumPressed(),
+                )
+              : ListTile(
+                  leading: const Icon(Icons.person_remove_rounded),
+                  title: const Text(
+                    'album_viewer_appbar_share_leave',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ).tr(),
+                  onTap: () => onLeaveAlbumPressed(),
+                ),
         ];
       }
     }
@@ -252,8 +264,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         ListTile(
           leading: const Icon(Icons.share_rounded),
           onTap: () {
-            AutoRouter.of(context)
-                .push(SharedLinkEditRoute(albumId: album.remoteId));
+            context.autoPush(SharedLinkEditRoute(albumId: album.remoteId));
             Navigator.pop(context);
           },
           title: const Text(
@@ -263,8 +274,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         ),
         ListTile(
           leading: const Icon(Icons.settings_rounded),
-          onTap: () =>
-              AutoRouter.of(context).navigate(AlbumOptionsRoute(album: album)),
+          onTap: () => context.autoNavigate(AlbumOptionsRoute(album: album)),
           title: const Text(
             "translated_text_options",
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -286,7 +296,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         ),
       ];
       showModalBottomSheet(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: context.scaffoldBackgroundColor,
         isScrollControlled: false,
         context: context,
         builder: (context) {
@@ -307,6 +317,33 @@ class AlbumViewerAppbar extends HookConsumerWidget
             ),
           );
         },
+      );
+    }
+
+    Widget buildActivitiesButton() {
+      return IconButton(
+        onPressed: () {
+          onActivities(album);
+        },
+        icon: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.mode_comment_outlined,
+            ),
+            if (comments != 0)
+              Padding(
+                padding: const EdgeInsets.only(left: 5),
+                child: Text(
+                  comments.toString(),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: context.primaryColor,
+                  ),
+                ),
+              ),
+          ],
+        ),
       );
     }
 
@@ -340,7 +377,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         );
       } else {
         return IconButton(
-          onPressed: () async => await AutoRouter.of(context).pop(),
+          onPressed: () async => await context.autoPop(),
           icon: const Icon(Icons.arrow_back_ios_rounded),
           splashRadius: 25,
         );
@@ -353,6 +390,8 @@ class AlbumViewerAppbar extends HookConsumerWidget
       title: selected.isNotEmpty ? Text('${selected.length}') : null,
       centerTitle: false,
       actions: [
+        if (album.shared && (album.activityEnabled || comments != 0))
+          buildActivitiesButton(),
         if (album.isRemote)
           IconButton(
             splashRadius: 25,

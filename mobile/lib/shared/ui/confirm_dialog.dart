@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:immich_mobile/extensions/build_context_extensions.dart';
 
 class ConfirmDialog extends StatelessWidget {
   final Function onOk;
@@ -30,11 +31,11 @@ class ConfirmDialog extends StatelessWidget {
       ).tr(),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(false),
+          onPressed: () => context.pop(false),
           child: Text(
             cancel,
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              color: context.primaryColor,
               fontWeight: FontWeight.bold,
             ),
           ).tr(),
@@ -42,7 +43,7 @@ class ConfirmDialog extends StatelessWidget {
         TextButton(
           onPressed: () {
             onOk();
-            Navigator.of(context).pop(true);
+            context.pop(true);
           },
           child: Text(
             ok,

@@ -1,4 +1,5 @@
-import { AssetEntity, AssetType, ExifEntity } from '@app/infra/entities';
+import { AssetEntity, AssetJobStatusEntity, AssetType, ExifEntity } from '@app/infra/entities';
+import { FindOptionsRelations } from 'typeorm';
 import { Paginated, PaginationOptions } from '../domain.util';
 
 export type AssetStats = Record<AssetType, number>;
@@ -99,7 +100,7 @@ export const IAssetRepository = 'IAssetRepository';
 export interface IAssetRepository {
   create(asset: AssetCreate): Promise<AssetEntity>;
   getByDate(ownerId: string, date: Date): Promise<AssetEntity[]>;
-  getByIds(ids: string[]): Promise<AssetEntity[]>;
+  getByIds(ids: string[], relations?: FindOptionsRelations<AssetEntity>): Promise<AssetEntity[]>;
   getByDayOfYear(ownerId: string, monthDay: MonthDay): Promise<AssetEntity[]>;
   getByChecksum(userId: string, checksum: Buffer): Promise<AssetEntity | null>;
   getByAlbumId(pagination: PaginationOptions, albumId: string): Paginated<AssetEntity>;
@@ -125,4 +126,5 @@ export interface IAssetRepository {
   getTimeBuckets(options: TimeBucketOptions): Promise<TimeBucketItem[]>;
   getTimeBucket(timeBucket: string, options: TimeBucketOptions): Promise<AssetEntity[]>;
   upsertExif(exif: Partial<ExifEntity>): Promise<void>;
+  upsertJobStatus(jobStatus: Partial<AssetJobStatusEntity>): Promise<void>;
 }

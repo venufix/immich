@@ -1,12 +1,12 @@
 import { IActivityRepository } from '@app/domain';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { ActivityEntity } from '../entities/activity.entity';
 
 export interface ActivitySearch {
   albumId?: string;
-  assetId?: string;
+  assetId?: string | null;
   userId?: string;
   isLiked?: boolean;
 }
@@ -20,7 +20,7 @@ export class ActivityRepository implements IActivityRepository {
     return this.repository.find({
       where: {
         userId,
-        assetId,
+        assetId: assetId === null ? IsNull() : assetId,
         albumId,
         isLiked,
       },
