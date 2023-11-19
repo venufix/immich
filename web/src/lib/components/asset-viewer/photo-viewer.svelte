@@ -12,6 +12,7 @@
   export let asset: AssetResponseDto;
   export let element: HTMLDivElement | undefined = undefined;
   export let haveFadeTransition = true;
+  export const rotate = () => setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation + 90 });
 
   let imgElement: HTMLDivElement;
   let assetData: string;

@@ -55,7 +55,7 @@
   export let album: AlbumResponseDto | null = null;
 
   let reactions: ActivityResponseDto[] = [];
-
+  let rotatePhotoviewer: () => void;
   const { setAssetId } = assetViewingStore;
   const {
     restartProgress: restartSlideshowProgress,
@@ -300,8 +300,16 @@
         isShowActivity = false;
         $isShowDetail = !$isShowDetail;
         return;
+      case 'R':
+      case 'r':
+        if (shiftKey) {
+          handleRotate();
+        }
     }
   };
+  function handleRotate() {
+    rotatePhotoviewer();
+  }
 
   const handleCloseViewer = () => {
     $isShowDetail = false;
@@ -600,6 +608,7 @@
         on:runJob={({ detail: job }) => handleRunJob(job)}
         on:playSlideShow={() => ($slideshowState = SlideshowState.PlaySlideshow)}
         on:unstack={handleUnstack}
+        on:rotate={handleRotate}
       />
     </div>
   {/if}
@@ -625,7 +634,12 @@
     {#if previewStackedAsset}
       {#key previewStackedAsset.id}
         {#if previewStackedAsset.type === AssetTypeEnum.Image}
-          <PhotoViewer asset={previewStackedAsset} on:close={closeViewer} haveFadeTransition={false} />
+          <PhotoViewer
+            bind:rotate={rotatePhotoviewer}
+            asset={previewStackedAsset}
+            on:close={closeViewer}
+            haveFadeTransition={false}
+          />
         {:else}
           <VideoViewer
             assetId={previewStackedAsset.id}
@@ -657,7 +671,7 @@
                 .endsWith('.insp'))}
             <PanoramaViewer {asset} />
           {:else}
-            <PhotoViewer {asset} on:close={closeViewer} />
+            <PhotoViewer bind:rotate={rotatePhotoviewer} {asset} on:close={closeViewer} />
           {/if}
         {:else}
           <VideoViewer
