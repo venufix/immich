@@ -30,7 +30,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
       Navigator.pop(context);
       ImmichToast.show(
         context: context,
-        msg: "Error leaving/removing from album",
+        msg: "shared_album_section_people_action_error".tr(),
         toastType: ToastType.error,
         gravity: ToastGravity.BOTTOM,
       );
@@ -81,7 +81,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
         actions = [
           ListTile(
             leading: const Icon(Icons.exit_to_app_rounded),
-            title: const Text("Leave album"),
+            title: const Text("shared_album_section_people_action_leave").tr(),
             onTap: leaveAlbum,
           ),
         ];
@@ -91,7 +91,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
         actions = [
           ListTile(
             leading: const Icon(Icons.person_remove_rounded),
-            title: const Text("Remove user from album"),
+            title: const Text("shared_album_section_people_remove_user").tr(),
             onTap: () => removeUserFromAlbum(user),
           ),
         ];
@@ -117,14 +117,10 @@ class AlbumOptionsPage extends HookConsumerWidget {
 
     buildOwnerInfo() {
       return ListTile(
-        leading: owner != null
-            ? UserCircleAvatar(
-                user: owner,
-                useRandomBackgroundColor: true,
-              )
-            : const SizedBox(),
+        leading:
+            owner != null ? UserCircleAvatar(user: owner) : const SizedBox(),
         title: Text(
-          album.owner.value?.firstName ?? "",
+          album.owner.value?.name ?? "",
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -134,11 +130,11 @@ class AlbumOptionsPage extends HookConsumerWidget {
           style: TextStyle(color: Colors.grey[500]),
         ),
         trailing: const Text(
-          "Owner",
+          "shared_album_section_people_owner_label",
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
-        ),
+        ).tr(),
       );
     }
 
@@ -151,11 +147,10 @@ class AlbumOptionsPage extends HookConsumerWidget {
           return ListTile(
             leading: UserCircleAvatar(
               user: user,
-              useRandomBackgroundColor: true,
               radius: 22,
             ),
             title: Text(
-              user.firstName,
+              user.name,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
               ),
@@ -220,7 +215,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
               subtitle:
                   const Text("shared_album_activity_setting_subtitle").tr(),
             ),
-          buildSectionTitle("PEOPLE"),
+          buildSectionTitle("shared_album_section_people_title".tr()),
           buildOwnerInfo(),
           buildSharedUsersList(),
         ],
