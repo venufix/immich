@@ -43,6 +43,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
   Widget build(BuildContext context, WidgetRef ref) {
     final newAlbumTitle = ref.watch(albumViewerProvider).editTitleText;
     final isEditAlbum = ref.watch(albumViewerProvider).isEditAlbum;
+    final isProcessing = useProcessingOverlay();
     final comments = album.shared
         ? ref.watch(
             activityStatisticsStateProvider(
@@ -52,7 +53,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         : 0;
 
     deleteAlbum() async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
 
       final bool success;
       if (album.shared) {
@@ -74,7 +75,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         );
       }
 
-      ImmichLoadingOverlayController.appLoader.hide();
+      isProcessing.value = false;
     }
 
     Future<void> showConfirmationDialog() async {
@@ -89,7 +90,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
             ),
             actions: <Widget>[
               TextButton(
-                onPressed: () => Navigator.pop(context, 'Cancel'),
+                onPressed: () => context.pop('Cancel'),
                 child: Text(
                   'Cancel',
                   style: TextStyle(
@@ -100,7 +101,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context, 'Confirm');
+                  context.pop('Confirm');
                   deleteAlbum();
                 },
                 child: Text(
@@ -122,7 +123,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
     }
 
     void onLeaveAlbumPressed() async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
 
       bool isSuccess =
           await ref.watch(sharedAlbumProvider.notifier).leaveAlbum(album);
@@ -131,7 +132,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         context
             .autoNavigate(const TabControllerRoute(children: [SharingRoute()]));
       } else {
-        Navigator.pop(context);
+        context.pop();
         ImmichToast.show(
           context: context,
           msg: "album_viewer_appbar_share_err_leave".tr(),
@@ -140,11 +141,11 @@ class AlbumViewerAppbar extends HookConsumerWidget
         );
       }
 
-      ImmichLoadingOverlayController.appLoader.hide();
+      isProcessing.value = false;
     }
 
     void onRemoveFromAlbumPressed() async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
 
       bool isSuccess =
           await ref.watch(sharedAlbumProvider.notifier).removeAssetFromAlbum(
@@ -153,12 +154,12 @@ class AlbumViewerAppbar extends HookConsumerWidget
               );
 
       if (isSuccess) {
-        Navigator.pop(context);
+        context.pop();
         selectionDisabled();
         ref.watch(albumProvider.notifier).getAllAlbums();
         ref.invalidate(albumDetailProvider(album.id));
       } else {
-        Navigator.pop(context);
+        context.pop();
         ImmichToast.show(
           context: context,
           msg: "album_viewer_appbar_share_err_remove".tr(),
@@ -167,7 +168,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
         );
       }
 
-      ImmichLoadingOverlayController.appLoader.hide();
+      isProcessing.value = false;
     }
 
     void handleShareAssets(
@@ -198,9 +199,9 @@ class AlbumViewerAppbar extends HookConsumerWidget
     }
 
     void onShareAssetsTo() async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
       handleShareAssets(ref, context, selected);
-      ImmichLoadingOverlayController.appLoader.hide();
+      isProcessing.value = false;
     }
 
     buildBottomSheetActions() {
@@ -210,7 +211,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
             leading: const Icon(Icons.ios_share_rounded),
             title: const Text(
               'album_viewer_appbar_share_to',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              style: TextStyle(fontWeight: FontWeight.w500),
             ).tr(),
             onTap: () => onShareAssetsTo(),
           ),
@@ -219,7 +220,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                   leading: const Icon(Icons.delete_sweep_rounded),
                   title: const Text(
                     'album_viewer_appbar_share_remove',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ).tr(),
                   onTap: () => onRemoveFromAlbumPressed(),
                 )
@@ -232,7 +233,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                   leading: const Icon(Icons.delete_forever_rounded),
                   title: const Text(
                     'album_viewer_appbar_share_delete',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ).tr(),
                   onTap: () => onDeleteAlbumPressed(),
                 )
@@ -240,7 +241,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
                   leading: const Icon(Icons.person_remove_rounded),
                   title: const Text(
                     'album_viewer_appbar_share_leave',
-                    style: TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(fontWeight: FontWeight.w500),
                   ).tr(),
                   onTap: () => onLeaveAlbumPressed(),
                 ),
@@ -253,23 +254,23 @@ class AlbumViewerAppbar extends HookConsumerWidget
         ListTile(
           leading: const Icon(Icons.person_add_alt_rounded),
           onTap: () {
-            Navigator.pop(context);
+            context.pop();
             onAddUsers!(album);
           },
           title: const Text(
             "album_viewer_page_share_add_users",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ).tr(),
         ),
         ListTile(
           leading: const Icon(Icons.share_rounded),
           onTap: () {
             context.autoPush(SharedLinkEditRoute(albumId: album.remoteId));
-            Navigator.pop(context);
+            context.pop();
           },
           title: const Text(
             "control_bottom_app_bar_share",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ).tr(),
         ),
         ListTile(
@@ -277,7 +278,7 @@ class AlbumViewerAppbar extends HookConsumerWidget
           onTap: () => context.autoNavigate(AlbumOptionsRoute(album: album)),
           title: const Text(
             "translated_text_options",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ).tr(),
         ),
       ];
@@ -286,12 +287,12 @@ class AlbumViewerAppbar extends HookConsumerWidget
         ListTile(
           leading: const Icon(Icons.add_photo_alternate_outlined),
           onTap: () {
-            Navigator.pop(context);
+            context.pop();
             onAddPhotos!(album);
           },
           title: const Text(
             "share_add_photos",
-            style: TextStyle(fontWeight: FontWeight.bold),
+            style: TextStyle(fontWeight: FontWeight.w500),
           ).tr(),
         ),
       ];

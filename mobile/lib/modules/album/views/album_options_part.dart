@@ -24,10 +24,11 @@ class AlbumOptionsPage extends HookConsumerWidget {
     final owner = album.owner.value;
     final userId = ref.watch(authenticationProvider).userId;
     final activityEnabled = useState(album.activityEnabled);
+    final isProcessing = useProcessingOverlay();
     final isOwner = owner?.id == userId;
 
     void showErrorMessage() {
-      Navigator.pop(context);
+      context.pop();
       ImmichToast.show(
         context: context,
         msg: "shared_album_section_people_action_error".tr(),
@@ -37,7 +38,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
     }
 
     void leaveAlbum() async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
 
       try {
         final isSuccess =
@@ -54,11 +55,11 @@ class AlbumOptionsPage extends HookConsumerWidget {
         showErrorMessage();
       }
 
-      ImmichLoadingOverlayController.appLoader.hide();
+      isProcessing.value = false;
     }
 
     void removeUserFromAlbum(User user) async {
-      ImmichLoadingOverlayController.appLoader.show();
+      isProcessing.value = true;
 
       try {
         await ref
@@ -70,8 +71,8 @@ class AlbumOptionsPage extends HookConsumerWidget {
         showErrorMessage();
       }
 
-      Navigator.pop(context);
-      ImmichLoadingOverlayController.appLoader.hide();
+      context.pop();
+      isProcessing.value = false;
     }
 
     void handleUserClick(User user) {
@@ -91,7 +92,8 @@ class AlbumOptionsPage extends HookConsumerWidget {
         actions = [
           ListTile(
             leading: const Icon(Icons.person_remove_rounded),
-            title: const Text("shared_album_section_people_remove_user").tr(),
+            title: const Text("shared_album_section_people_action_remove_user")
+                .tr(),
             onTap: () => removeUserFromAlbum(user),
           ),
         ];
@@ -122,18 +124,16 @@ class AlbumOptionsPage extends HookConsumerWidget {
         title: Text(
           album.owner.value?.name ?? "",
           style: const TextStyle(
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
           ),
         ),
         subtitle: Text(
           album.owner.value?.email ?? "",
-          style: TextStyle(color: Colors.grey[500]),
+          style: TextStyle(color: Colors.grey[600]),
         ),
-        trailing: const Text(
+        trailing: Text(
           "shared_album_section_people_owner_label",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: context.textTheme.labelLarge,
         ).tr(),
       );
     }
@@ -152,12 +152,12 @@ class AlbumOptionsPage extends HookConsumerWidget {
             title: Text(
               user.name,
               style: const TextStyle(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w500,
               ),
             ),
             subtitle: Text(
               user.email,
-              style: TextStyle(color: Colors.grey[500]),
+              style: TextStyle(color: Colors.grey[600]),
             ),
             trailing: userId == user.id || isOwner
                 ? const Icon(Icons.more_horiz_rounded)
@@ -181,9 +181,7 @@ class AlbumOptionsPage extends HookConsumerWidget {
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () {
-            context.autoPop(null);
-          },
+          onPressed: () => context.autoPop(null),
         ),
         centerTitle: true,
         title: Text("translated_text_options".tr()),
@@ -209,11 +207,15 @@ class AlbumOptionsPage extends HookConsumerWidget {
               dense: true,
               title: Text(
                 "shared_album_activity_setting_title",
-                style: context.textTheme.labelLarge
-                    ?.copyWith(fontWeight: FontWeight.bold),
+                style: context.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w500),
               ).tr(),
-              subtitle:
-                  const Text("shared_album_activity_setting_subtitle").tr(),
+              subtitle: Text(
+                "shared_album_activity_setting_subtitle",
+                style: context.textTheme.labelLarge?.copyWith(
+                  color: context.textTheme.labelLarge?.color?.withAlpha(175),
+                ),
+              ).tr(),
             ),
           buildSectionTitle("shared_album_section_people_title".tr()),
           buildOwnerInfo(),

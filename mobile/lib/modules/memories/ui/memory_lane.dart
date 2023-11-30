@@ -17,7 +17,7 @@ class MemoryLane extends HookConsumerWidget {
         .whenData(
           (memories) => memories != null
               ? Container(
-                  margin: const EdgeInsets.only(top: 10),
+                  margin: const EdgeInsets.only(top: 10, left: 10),
                   height: 200,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
@@ -48,7 +48,7 @@ class MemoryLane extends HookConsumerWidget {
                                 clipBehavior: Clip.hardEdge,
                                 child: ColorFiltered(
                                   colorFilter: ColorFilter.mode(
-                                    Colors.black.withOpacity(0.1),
+                                    Colors.black.withOpacity(0.2),
                                     BlendMode.darken,
                                   ),
                                   child: ImmichImage(
@@ -71,9 +71,9 @@ class MemoryLane extends HookConsumerWidget {
                                   child: Text(
                                     memory.title,
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                       color: Colors.white,
-                                      fontSize: 14,
+                                      fontSize: 15,
                                     ),
                                   ),
                                 ),
