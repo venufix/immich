@@ -27,6 +27,7 @@ export interface ImmichTags extends Omit<Tags, 'FocalLength' | 'Duration'> {
   ImagePixelDepth?: string;
   FocalLength?: number;
   Duration?: number | ExifDuration;
+  Orientation?: number;
 }
 
 export interface IMetadataRepository {

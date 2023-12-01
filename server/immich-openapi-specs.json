@@ -6471,6 +6471,9 @@
           "longitude": {
             "type": "number"
           },
+          "orientation": {
+            "type": "number"
+          },
           "removeParent": {
             "type": "boolean"
           },
@@ -9368,6 +9371,9 @@
             "type": "number"
           },
           "longitude": {
+            "type": "number"
+          },
+          "orientation": {
             "type": "number"
           }
         },

@@ -55,7 +55,7 @@
   export let album: AlbumResponseDto | null = null;
 
   let reactions: ActivityResponseDto[] = [];
-  let rotatePhotoviewer: () => void;
+  let rotatePhotoviewer: () => Promise<void>;
   const { setAssetId } = assetViewingStore;
   const {
     restartProgress: restartSlideshowProgress,

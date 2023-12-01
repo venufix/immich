@@ -245,7 +245,7 @@ export class MetadataService {
   }
 
   async handleSidecarWrite(job: ISidecarWriteJob) {
-    const { id, description, dateTimeOriginal, latitude, longitude } = job;
+    const { id, description, dateTimeOriginal, latitude, longitude, orientation } = job;
     const [asset] = await this.assetRepository.getByIds([id]);
     if (!asset) {
       return false;
@@ -258,6 +258,7 @@ export class MetadataService {
         CreationDate: dateTimeOriginal,
         GPSLatitude: latitude,
         GPSLongitude: longitude,
+        Orientation: orientation,
       },
       _.isUndefined,
     );

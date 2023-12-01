@@ -202,6 +202,11 @@ export class AssetBulkUpdateDto extends BulkIdsDto {
   @IsLongitude()
   @IsNotEmpty()
   longitude?: number;
+
+  @Optional()
+  @IsInt()
+  @Type(() => Number)
+  orientation?: number;
 }
 
 export class UpdateAssetDto {
@@ -230,6 +235,11 @@ export class UpdateAssetDto {
   @IsLongitude()
   @IsNotEmpty()
   longitude?: number;
+
+  @Optional()
+  @IsInt()
+  @Type(() => Number)
+  orientation?: number;
 }
 
 export class RandomAssetsDto {
