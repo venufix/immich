@@ -11,7 +11,6 @@
   import { handleError } from '$lib/utils/handle-error';
 
   export let asset: AssetResponseDto;
-  export let element: HTMLDivElement | undefined = undefined;
   export let haveFadeTransition = true;
 
   // const orientationToRotation = (value: string): number => {
@@ -28,6 +27,18 @@
   //       return 0;
   //   }
   // };
+
+  const isHorizontal = (zoom: number): boolean => {
+    return (((zoom % 360) + 360) / 90) % 2 === 0;
+  };
+
+  $: {
+    if (isHorizontal($zoomImageWheelState.currentRotation)) {
+      [imgWidth, imgHeight] = [clientWidth, clientHeight];
+    } else {
+      [imgHeight, imgWidth] = [clientWidth, clientHeight];
+    }
+  }
 
   const rotationToOrientation = (rotation: number): number => {
     switch (((rotation % 360) + 360) % 360) {
@@ -56,6 +67,10 @@
     }
   };
 
+  let clientWidth: number;
+  let clientHeight: number;
+  let imgWidth: number;
+  let imgHeight: number;
   let imgElement: HTMLDivElement;
   let assetData: string;
   let abortController: AbortController;
@@ -163,20 +178,22 @@
 <svelte:window on:keydown={handleKeypress} on:copyImage={doCopy} on:zoomImage={doZoomImage} />
 
 <div
-  bind:this={element}
+  bind:clientHeight={clientHeight}
+  bind:clientWidth={clientWidth}
   transition:fade={{ duration: haveFadeTransition ? 150 : 0 }}
   class="flex h-full select-none place-content-center place-items-center"
 >
   {#await loadAssetData({ loadOriginal: false })}
     <LoadingSpinner />
   {:then}
-    <div bind:this={imgElement} class="h-full w-full">
+    <div bind:this={imgElement}>
       <img
         transition:fade={{ duration: haveFadeTransition ? 150 : 0 }}
         src={assetData}
         alt={asset.id}
         class="h-full w-full object-contain"
         draggable="false"
+        style={`width:${imgWidth}px;height:${imgHeight}px;`}
       />
     </div>
   {/await}
