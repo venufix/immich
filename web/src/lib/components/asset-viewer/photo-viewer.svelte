@@ -6,7 +6,7 @@
   import { notificationController, NotificationType } from '../shared-components/notification/notification';
   import { useZoomImageWheel } from '@zoom-image/svelte';
   import { photoZoomState } from '$lib/stores/zoom-image.store';
-  import { getAssetRatio, isWebCompatibleImage } from '$lib/utils/asset-utils';
+  import { isWebCompatibleImage } from '$lib/utils/asset-utils';
   import { shouldIgnoreShortcut } from '$lib/utils/shortcut';
   import { handleError } from '$lib/utils/handle-error';
 
@@ -14,23 +14,23 @@
   export let element: HTMLDivElement | undefined = undefined;
   export let haveFadeTransition = true;
 
-  const getRotation = (value: string): number => {
-    switch (value) {
-      case '1':
-        return 0;
-      case '3':
-        return 180;
-      case '6':
-        return 90;
-      case '8':
-        return 270;
-      default:
-        return 0;
-    }
-  };
+  // const orientationToRotation = (value: string): number => {
+  //   switch (value) {
+  //     case '1':
+  //       return 0;
+  //     case '3':
+  //       return 180;
+  //     case '6':
+  //       return 90;
+  //     case '8':
+  //       return 270;
+  //     default:
+  //       return 0;
+  //   }
+  // };
 
-  const getRotationString = (rotation: number): number => {
-    switch (rotation % 360) {
+  const rotationToOrientation = (rotation: number): number => {
+    switch (((rotation % 360) + 360) % 360) {
       case 0:
         return 1;
       case 90:
@@ -46,11 +46,10 @@
 
   export const rotate = async () => {
     setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation - 90 });
-    console.log(getRotationString($zoomImageWheelState.currentRotation));
     try {
       await api.assetApi.updateAsset({
         id: asset.id,
-        updateAssetDto: { orientation: getRotationString($zoomImageWheelState.currentRotation) },
+        updateAssetDto: { orientation: rotationToOrientation($zoomImageWheelState.currentRotation) },
       });
     } catch (error) {
       handleError(error, 'Unable to change orientation');
@@ -158,16 +157,6 @@
       maxZoom: 10,
       wheelZoomRatio: 0.2,
     });
-    if (asset.exifInfo?.orientation) {
-      const { width, height } = getAssetRatio(asset);
-      if (width > height && parseInt(asset.exifInfo?.orientation) != 1) {
-        setZoomImageWheelState({ currentRotation: getRotation(asset.exifInfo?.orientation) });
-      }
-
-      if (width < height && parseInt(asset.exifInfo?.orientation) != 6) {
-        setZoomImageWheelState({ currentRotation: getRotation(asset.exifInfo?.orientation) });
-      }
-    }
   }
 </script>
 

@@ -593,7 +593,6 @@ export class AssetService {
   private async updateMetadata(dto: ISidecarWriteJob) {
     const { id, description, dateTimeOriginal, latitude, longitude, orientation } = dto;
     const writes = _.omitBy({ description, dateTimeOriginal, latitude, longitude, orientation }, _.isUndefined);
-    console.log('updatemetadta', orientation);
     if (Object.keys(writes).length > 0) {
       await this.assetRepository.upsertExif({ assetId: id, ...writes });
       await this.jobRepository.queue({ name: JobName.SIDECAR_WRITE, data: { id, ...writes } });
