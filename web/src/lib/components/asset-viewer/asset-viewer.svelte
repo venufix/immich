@@ -55,7 +55,6 @@
   export let album: AlbumResponseDto | null = null;
 
   let reactions: ActivityResponseDto[] = [];
-  let rotatePhotoviewer: () => Promise<void>;
   const { setAssetId } = assetViewingStore;
   const {
     restartProgress: restartSlideshowProgress,
@@ -256,6 +255,11 @@
     isShowActivity = !isShowActivity;
   };
 
+  const handleRotate = () => {
+    const rotateImage = new CustomEvent('rotateImage');
+    window.dispatchEvent(rotateImage);
+  };
+
   const handleKeyboardPress = (event: KeyboardEvent) => {
     if (shouldIgnoreShortcut(event)) {
       return;
@@ -307,9 +311,6 @@
         }
     }
   };
-  function handleRotate() {
-    rotatePhotoviewer();
-  }
 
   const handleCloseViewer = () => {
     $isShowDetail = false;
@@ -634,12 +635,7 @@
     {#if previewStackedAsset}
       {#key previewStackedAsset.id}
         {#if previewStackedAsset.type === AssetTypeEnum.Image}
-          <PhotoViewer
-            bind:rotate={rotatePhotoviewer}
-            asset={previewStackedAsset}
-            on:close={closeViewer}
-            haveFadeTransition={false}
-          />
+          <PhotoViewer asset={previewStackedAsset} on:close={closeViewer} haveFadeTransition={false} />
         {:else}
           <VideoViewer
             assetId={previewStackedAsset.id}
@@ -671,7 +667,7 @@
                 .endsWith('.insp'))}
             <PanoramaViewer {asset} />
           {:else}
-            <PhotoViewer bind:rotate={rotatePhotoviewer} {asset} on:close={closeViewer} />
+            <PhotoViewer {asset} on:close={closeViewer} />
           {/if}
         {:else}
           <VideoViewer

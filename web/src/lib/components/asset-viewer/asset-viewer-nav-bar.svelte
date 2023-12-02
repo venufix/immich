@@ -183,7 +183,7 @@
                 text={asset.isArchived ? 'Unarchive' : 'Archive'}
               />
               <MenuOption on:click={() => onMenuClick('asProfileImage')} text="As profile picture" />
-              <MenuOption on:click={() => onMenuClick('rotate')} text="Rotate left" />
+              <MenuOption on:click={() => onMenuClick('rotate')} text="Rotate right" />
               {#if hasStackChildren}
                 <MenuOption on:click={() => onMenuClick('unstack')} text="Un-Stack" />
               {/if}

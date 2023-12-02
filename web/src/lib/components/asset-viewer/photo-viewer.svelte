@@ -12,6 +12,7 @@
 
   export let asset: AssetResponseDto;
   export let haveFadeTransition = true;
+  export let element: HTMLDivElement | undefined = undefined;
 
   // const orientationToRotation = (value: string): number => {
   //   switch (value) {
@@ -55,8 +56,8 @@
     }
   };
 
-  export const rotate = async () => {
-    setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation - 90 });
+  const doRotate = async () => {
+    setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation + 90 });
     try {
       await api.assetApi.updateAsset({
         id: asset.id,
@@ -175,13 +176,14 @@
   }
 </script>
 
-<svelte:window on:keydown={handleKeypress} on:copyImage={doCopy} on:zoomImage={doZoomImage} />
+<svelte:window on:keydown={handleKeypress} on:rotateImage={doRotate} on:copyImage={doCopy} on:zoomImage={doZoomImage} />
 
 <div
-  bind:clientHeight={clientHeight}
-  bind:clientWidth={clientWidth}
+  bind:this={element}
+  bind:clientHeight
+  bind:clientWidth
   transition:fade={{ duration: haveFadeTransition ? 150 : 0 }}
-  class="flex h-full select-none place-content-center place-items-center"
+  class="flex h-full w-full select-none place-content-center place-items-center"
 >
   {#await loadAssetData({ loadOriginal: false })}
     <LoadingSpinner />
@@ -193,7 +195,7 @@
         alt={asset.id}
         class="h-full w-full object-contain"
         draggable="false"
-        style={`width:${imgWidth}px;height:${imgHeight}px;`}
+        style={`width:${imgWidth}px;height:${imgHeight}px;transform-origin: 0px 0px 0px;`}
       />
     </div>
   {/await}
