@@ -29,16 +29,10 @@
   //   }
   // };
 
-  const isHorizontal = (zoom: number): boolean => {
-    return (((zoom % 360) + 360) / 90) % 2 === 0;
-  };
-
   $: {
-    if (isHorizontal($zoomImageWheelState.currentRotation)) {
-      [imgWidth, imgHeight] = [clientWidth, clientHeight];
-    } else {
-      [imgHeight, imgWidth] = [clientWidth, clientHeight];
-    }
+    $zoomImageWheelState.currentRotation === 0 || $zoomImageWheelState.currentRotation === 180
+      ? ([imgHeight, imgWidth] = [clientHeight, clientWidth])
+      : ([imgWidth, imgHeight] = [clientHeight, clientWidth]);
   }
 
   const rotationToOrientation = (rotation: number): number => {
@@ -57,7 +51,7 @@
   };
 
   const doRotate = async () => {
-    setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation + 90 });
+    setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation + 90, currentZoom: 1 });
     try {
       await api.assetApi.updateAsset({
         id: asset.id,
