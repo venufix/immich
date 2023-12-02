@@ -19,13 +19,17 @@
     mdiImageOutline,
     mdiMapMarkerOutline,
     mdiInformationOutline,
+    mdiEye,
+    mdiEyeOff,
   } from '@mdi/js';
   import Icon from '$lib/components/elements/icon.svelte';
+  import CircleIconButton from '../elements/buttons/circle-icon-button.svelte';
   import Map from '../shared-components/map/map.svelte';
   import { websocketStore } from '$lib/stores/websocket';
   import { AppRoute } from '$lib/constants';
   import ChangeLocation from '../shared-components/change-location.svelte';
   import { handleError } from '../../utils/handle-error';
+  import { user } from '$lib/stores/user.store';
 
   export let asset: AssetResponseDto;
   export let albums: AlbumResponseDto[] = [];
@@ -56,6 +60,7 @@
   })();
 
   $: people = asset.people || [];
+  $: showingHiddenPeople = false;
 
   const unsubscribe = websocketStore.onAssetUpdate.subscribe((assetUpdate) => {
     if (assetUpdate && assetUpdate.id === asset.id) {
@@ -176,25 +181,38 @@
 
   {#if !api.isSharedLink && people.length > 0}
     <section class="px-4 py-4 text-sm">
-      <h2>PEOPLE</h2>
+      <div class="flex h-10 w-full items-center justify-between">
+        <h2>PEOPLE</h2>
+        {#if people.some((person) => person.isHidden)}
+          <CircleIconButton
+            title="Show hidden people"
+            icon={showingHiddenPeople ? mdiEyeOff : mdiEye}
+            padding="1"
+            on:click={() => (showingHiddenPeople = !showingHiddenPeople)}
+          />
+        {/if}
+      </div>
 
-      <div class="mt-4 flex flex-wrap gap-2">
+      <div class="mt-2 flex flex-wrap gap-2">
         {#each people as person (person.id)}
           <a
             href="/people/{person.id}?previousRoute={albumId ? `${AppRoute.ALBUMS}/${albumId}` : AppRoute.PHOTOS}"
-            class="w-[90px]"
+            class="w-[90px] {!showingHiddenPeople && person.isHidden ? 'hidden' : ''}"
             on:click={() => dispatch('close-viewer')}
           >
-            <ImageThumbnail
-              curve
-              shadow
-              url={api.getPeopleThumbnailUrl(person.id)}
-              altText={person.name}
-              title={person.name}
-              widthStyle="90px"
-              heightStyle="90px"
-              thumbhash={null}
-            />
+            <div class="relative">
+              <ImageThumbnail
+                curve
+                shadow
+                url={api.getPeopleThumbnailUrl(person.id)}
+                altText={person.name}
+                title={person.name}
+                widthStyle="90px"
+                heightStyle="90px"
+                thumbhash={null}
+                hidden={person.isHidden}
+              />
+            </div>
             <p class="mt-1 truncate font-medium" title={person.name}>{person.name}</p>
             {#if person.birthDate}
               {@const personBirthDate = DateTime.fromISO(person.birthDate)}
@@ -238,12 +256,14 @@
         zone: asset.exifInfo.timeZone ?? undefined,
       })}
       <div
-        class="flex justify-between place-items-start gap-4 py-4 hover:dark:text-immich-dark-primary hover:text-immich-primary cursor-pointer"
-        on:click={() => (isShowChangeDate = true)}
-        on:keydown={(event) => event.key === 'Enter' && (isShowChangeDate = true)}
+        class="flex justify-between place-items-start gap-4 py-4"
         tabindex="0"
         role="button"
-        title="Edit date"
+        on:click={() => (isOwner ? (isShowChangeDate = true) : null)}
+        on:keydown={(event) => (isOwner ? event.key === 'Enter' && (isShowChangeDate = true) : null)}
+        title={isOwner ? 'Edit date' : ''}
+        class:hover:dark:text-immich-dark-primary={isOwner}
+        class:hover:text-immich-primary={isOwner}
       >
         <div class="flex gap-4">
           <div>
@@ -276,11 +296,14 @@
             </div>
           </div>
         </div>
-        <button class="focus:outline-none">
-          <Icon path={mdiPencil} size="20" />
-        </button>
+
+        {#if isOwner}
+          <button class="focus:outline-none">
+            <Icon path={mdiPencil} size="20" />
+          </button>
+        {/if}
       </div>
-    {:else if !asset.exifInfo?.dateTimeOriginal && !asset.isReadOnly}
+    {:else if !asset.exifInfo?.dateTimeOriginal && !asset.isReadOnly && $user && asset.ownerId === $user.id}
       <div class="flex justify-between place-items-start gap-4 py-4">
         <div class="flex gap-4">
           <div>
@@ -410,12 +433,14 @@
 
     {#if asset.exifInfo?.city && !asset.isReadOnly}
       <div
-        class="flex justify-between place-items-start gap-4 py-4 hover:dark:text-immich-dark-primary hover:text-immich-primary cursor-pointer"
-        on:click={() => (isShowChangeLocation = true)}
-        on:keydown={(event) => event.key === 'Enter' && (isShowChangeLocation = true)}
+        class="flex justify-between place-items-start gap-4 py-4"
+        on:click={() => (isOwner ? (isShowChangeLocation = true) : null)}
+        on:keydown={(event) => (isOwner ? event.key === 'Enter' && (isShowChangeLocation = true) : null)}
         tabindex="0"
+        title={isOwner ? 'Edit location' : ''}
         role="button"
-        title="Edit location"
+        class:hover:dark:text-immich-dark-primary={isOwner}
+        class:hover:text-immich-primary={isOwner}
       >
         <div class="flex gap-4">
           <div><Icon path={mdiMapMarkerOutline} size="24" /></div>
@@ -435,11 +460,13 @@
           </div>
         </div>
 
-        <div>
-          <Icon path={mdiPencil} size="20" />
-        </div>
+        {#if isOwner}
+          <div>
+            <Icon path={mdiPencil} size="20" />
+          </div>
+        {/if}
       </div>
-    {:else if !asset.exifInfo?.city && !asset.isReadOnly}
+    {:else if !asset.exifInfo?.city && !asset.isReadOnly && $user && asset.ownerId === $user.id}
       <div
         class="flex justify-between place-items-start gap-4 py-4 rounded-lg pr-2 hover:dark:text-immich-dark-primary hover:text-immich-primary"
         on:click={() => (isShowChangeLocation = true)}
