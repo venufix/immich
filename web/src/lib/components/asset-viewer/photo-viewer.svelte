@@ -9,6 +9,7 @@
   import { isWebCompatibleImage } from '$lib/utils/asset-utils';
   import { shouldIgnoreShortcut } from '$lib/utils/shortcut';
   import { handleError } from '$lib/utils/handle-error';
+  import { user } from '$lib/stores/user.store';
 
   export let asset: AssetResponseDto;
   export let haveFadeTransition = true;
@@ -52,6 +53,10 @@
 
   const doRotate = async () => {
     setZoomImageWheelState({ currentRotation: $zoomImageWheelState.currentRotation + 90, currentZoom: 1 });
+
+    if (($user && $user.id !== asset.ownerId) || $user === null || asset.isReadOnly) {
+      return;
+    }
     try {
       await api.assetApi.updateAsset({
         id: asset.id,
@@ -182,7 +187,7 @@
   {#await loadAssetData({ loadOriginal: false })}
     <LoadingSpinner />
   {:then}
-    <div bind:this={imgElement}>
+    <div bind:this={imgElement} class="duration-500">
       <img
         transition:fade={{ duration: haveFadeTransition ? 150 : 0 }}
         src={assetData}
