@@ -30,14 +30,19 @@
   //   }
   // };
 
+  const getRotationModulo = (rotation: number): number => {
+    return ((rotation % 360) + 360) % 360;
+  };
+
   $: {
-    $zoomImageWheelState.currentRotation === 0 || $zoomImageWheelState.currentRotation === 180
+    getRotationModulo($zoomImageWheelState.currentRotation) === 0 ||
+    getRotationModulo($zoomImageWheelState.currentRotation) === 180
       ? ([imgHeight, imgWidth] = [clientHeight, clientWidth])
       : ([imgWidth, imgHeight] = [clientHeight, clientWidth]);
   }
 
   const rotationToOrientation = (rotation: number): number => {
-    switch (((rotation % 360) + 360) % 360) {
+    switch (getRotationModulo(rotation)) {
       case 0:
         return 1;
       case 90:

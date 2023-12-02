@@ -205,9 +205,9 @@ export class AssetBulkUpdateDto extends BulkIdsDto {
   longitude?: number;
 
   @Optional()
+  @IsInt()
   @Min(1)
   @Max(8)
-  @IsInt()
   @Type(() => Number)
   orientation?: number;
 }
@@ -240,9 +240,9 @@ export class UpdateAssetDto {
   longitude?: number;
 
   @Optional()
+  @IsInt()
   @Min(1)
   @Max(8)
-  @IsInt()
   @Type(() => Number)
   orientation?: number;
 }
