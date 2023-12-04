@@ -15,20 +15,35 @@
   export let haveFadeTransition = true;
   export let element: HTMLDivElement | undefined = undefined;
 
-  // const orientationToRotation = (value: string): number => {
-  //   switch (value) {
-  //     case '1':
-  //       return 0;
-  //     case '3':
-  //       return 180;
-  //     case '6':
-  //       return 90;
-  //     case '8':
-  //       return 270;
-  //     default:
-  //       return 0;
-  //   }
-  // };
+  const orientationToRotation = (value: string): number => {
+    if (value === '1' || value === '6' || value === '8') {
+      if (imgWidth > imgHeight) {
+        return 0;
+      } else {
+        return 90;
+      }
+    }
+    switch (value) {
+      case '1':
+        return 0;
+      case '2':
+        return 0;
+      case '3':
+        return 180;
+      case '4':
+        return 0;
+      case '5':
+        return 270;
+      case '6':
+        return 90;
+      case '7':
+        return 90;
+      case '8':
+        return 270;
+      default:
+        return 0;
+    }
+  };
 
   const getRotationModulo = (rotation: number): number => {
     return ((rotation % 360) + 360) % 360;
@@ -46,11 +61,11 @@
       case 0:
         return 1;
       case 90:
-        return 6;
+        return 8;
       case 180:
         return 3;
       case 270:
-        return 8;
+        return 6;
       default:
         return 1;
     }
@@ -192,7 +207,13 @@
   {#await loadAssetData({ loadOriginal: false })}
     <LoadingSpinner />
   {:then}
-    <div bind:this={imgElement} class="duration-500">
+    <div
+      bind:this={imgElement}
+      class="duration-500"
+      style={asset.exifInfo?.orientation
+        ? `transform: rotate(${orientationToRotation(asset.exifInfo?.orientation)}deg);`
+        : ''}
+    >
       <img
         transition:fade={{ duration: haveFadeTransition ? 150 : 0 }}
         src={assetData}
