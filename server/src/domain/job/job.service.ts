@@ -10,6 +10,7 @@ import {
   ISystemConfigRepository,
   JobHandler,
   JobItem,
+  QueueCleanType,
 } from '../repositories';
 import { FeatureFlag, SystemConfigCore } from '../system-config/system-config.core';
 import { JobCommand, JobName, QueueName } from './job.constants';
@@ -48,6 +49,11 @@ export class JobService {
 
       case JobCommand.EMPTY:
         await this.jobRepository.empty(queueName);
+        break;
+
+      case JobCommand.CLEAR_FAILED:
+        const failedJobs = await this.jobRepository.clear(queueName, QueueCleanType.FAILED);
+        this.logger.debug(`Cleared failed jobs: ${failedJobs}`);
         break;
     }
 
@@ -195,7 +201,7 @@ export class JobService {
         const { id } = item.data;
         const person = await this.personRepository.getById(id);
         if (person) {
-          this.communicationRepository.send(CommunicationEvent.PERSON_THUMBNAIL, person.ownerId, id);
+          this.communicationRepository.send(CommunicationEvent.PERSON_THUMBNAIL, person.ownerId, person.id);
         }
         break;
 
@@ -223,7 +229,9 @@ export class JobService {
         }
 
         const [asset] = await this.assetRepository.getByIds([item.data.id]);
-        if (asset) {
+
+        // Only live-photo motion part will be marked as not visible immediately on upload. Skip notifying clients
+        if (asset && asset.isVisible) {
           this.communicationRepository.send(CommunicationEvent.UPLOAD_SUCCESS, asset.ownerId, mapAsset(asset));
         }
       }

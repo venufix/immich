@@ -1,7 +1,11 @@
+// ignore_for_file: prefer-single-widget-per-file
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:immich_mobile/extensions/build_context_extensions.dart';
+import 'package:immich_mobile/modules/album/providers/album.provider.dart';
+import 'package:immich_mobile/modules/album/providers/shared_album.provider.dart';
 import 'package:immich_mobile/modules/album/ui/add_to_album_sliverlist.dart';
 import 'package:immich_mobile/modules/home/models/selection_state.dart';
 import 'package:immich_mobile/modules/home/ui/delete_dialog.dart';
@@ -12,45 +16,53 @@ import 'package:immich_mobile/shared/models/album.dart';
 
 class ControlBottomAppBar extends ConsumerWidget {
   final void Function(bool shareLocal) onShare;
-  final void Function() onFavorite;
-  final void Function() onArchive;
-  final void Function() onDelete;
-  final void Function(bool onlyMerged) onDeleteLocal;
+  final void Function()? onFavorite;
+  final void Function()? onArchive;
+  final void Function()? onDelete;
+  final void Function(bool onlyBackedUp)? onDeleteLocal;
   final Function(Album album) onAddToAlbum;
   final void Function() onCreateNewAlbum;
   final void Function() onUpload;
-  final void Function() onStack;
+  final void Function()? onStack;
+  final void Function()? onEditTime;
+  final void Function()? onEditLocation;
+  final void Function()? onRemoveFromAlbum;
 
-  final List<Album> albums;
-  final List<Album> sharedAlbums;
   final bool enabled;
+  final bool unfavorite;
+  final bool unarchive;
   final SelectionAssetState selectionAssetState;
 
   const ControlBottomAppBar({
     Key? key,
     required this.onShare,
-    required this.onFavorite,
-    required this.onArchive,
-    required this.onDelete,
-    required this.onDeleteLocal,
-    required this.sharedAlbums,
-    required this.albums,
+    this.onFavorite,
+    this.onArchive,
+    this.onDelete,
+    this.onDeleteLocal,
     required this.onAddToAlbum,
     required this.onCreateNewAlbum,
     required this.onUpload,
-    required this.onStack,
+    this.onStack,
+    this.onEditTime,
+    this.onEditLocation,
+    this.onRemoveFromAlbum,
     this.selectionAssetState = const SelectionAssetState(),
     this.enabled = true,
+    this.unarchive = false,
+    this.unfavorite = false,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    var hasRemote =
+    final hasRemote =
         selectionAssetState.hasRemote || selectionAssetState.hasMerged;
-    var hasLocal =
+    final hasLocal =
         selectionAssetState.hasLocal || selectionAssetState.hasMerged;
     final trashEnabled =
         ref.watch(serverInfoProvider.select((v) => v.serverFeatures.trash));
+    final albums = ref.watch(albumProvider).where((a) => a.isRemote).toList();
+    final sharedAlbums = ref.watch(sharedAlbumProvider);
 
     List<Widget> renderActionButtons() {
       return [
@@ -65,19 +77,39 @@ class ControlBottomAppBar extends ConsumerWidget {
           label: "control_bottom_app_bar_share_to".tr(),
           onPressed: enabled ? () => onShare(true) : null,
         ),
-        if (hasRemote)
+        if (hasRemote && onArchive != null)
           ControlBoxButton(
-            iconData: Icons.archive,
-            label: "control_bottom_app_bar_archive".tr(),
+            iconData: unarchive ? Icons.unarchive : Icons.archive,
+            label: (unarchive
+                    ? "control_bottom_app_bar_unarchive"
+                    : "control_bottom_app_bar_archive")
+                .tr(),
             onPressed: enabled ? onArchive : null,
           ),
-        if (hasRemote)
+        if (hasRemote && onFavorite != null)
           ControlBoxButton(
-            iconData: Icons.favorite_border_rounded,
-            label: "control_bottom_app_bar_favorite".tr(),
+            iconData: unfavorite
+                ? Icons.favorite_border_rounded
+                : Icons.favorite_rounded,
+            label: (unfavorite
+                    ? "control_bottom_app_bar_unfavorite"
+                    : "control_bottom_app_bar_favorite")
+                .tr(),
             onPressed: enabled ? onFavorite : null,
           ),
-        if (hasRemote)
+        if (hasRemote && onEditTime != null)
+          ControlBoxButton(
+            iconData: Icons.edit_calendar_outlined,
+            label: "control_bottom_app_bar_edit_time".tr(),
+            onPressed: enabled ? onEditTime : null,
+          ),
+        if (hasRemote && onEditLocation != null)
+          ControlBoxButton(
+            iconData: Icons.edit_location_alt_outlined,
+            label: "control_bottom_app_bar_edit_location".tr(),
+            onPressed: enabled ? onEditLocation : null,
+          ),
+        if (hasRemote && onDelete != null)
           ControlBoxButton(
             iconData: Icons.delete_outline_rounded,
             label: "control_bottom_app_bar_delete".tr(),
@@ -88,17 +120,17 @@ class ControlBottomAppBar extends ConsumerWidget {
                         context: context,
                         builder: (BuildContext context) {
                           return DeleteDialog(
-                            onDelete: onDelete,
+                            onDelete: onDelete!,
                           );
                         },
                       );
                     } else {
-                      onDelete();
+                      onDelete!();
                     }
                   }
                 : null,
           ),
-        if (hasLocal)
+        if (hasLocal && onDeleteLocal != null)
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 100),
             child: ControlBoxButton(
@@ -111,7 +143,7 @@ class ControlBottomAppBar extends ConsumerWidget {
                         builder: (BuildContext context) {
                           return DeleteLocalOnlyDialog(
                             showWarning: selectionAssetState.hasLocal,
-                            onDeleteLocal: onDeleteLocal,
+                            onDeleteLocal: onDeleteLocal!,
                           );
                         },
                       );
@@ -119,11 +151,19 @@ class ControlBottomAppBar extends ConsumerWidget {
                   : null,
             ),
           ),
-        if (!hasLocal && selectionAssetState.selectedCount > 1)
+        if (!hasLocal &&
+            selectionAssetState.selectedCount > 1 &&
+            onStack != null)
           ControlBoxButton(
             iconData: Icons.filter_none_rounded,
             label: "control_bottom_app_bar_stack".tr(),
             onPressed: enabled ? onStack : null,
+          ),
+        if (onRemoveFromAlbum != null)
+          ControlBoxButton(
+            iconData: Icons.delete_sweep_rounded,
+            label: 'album_viewer_appbar_share_remove'.tr(),
+            onPressed: enabled ? onRemoveFromAlbum : null,
           ),
         if (hasLocal)
           ControlBoxButton(
@@ -173,7 +213,7 @@ class ControlBottomAppBar extends ConsumerWidget {
                     const CustomDraggingHandle(),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: hasLocal ? 90 : 75,
+                      height: 90,
                       child: ListView(
                         shrinkWrap: true,
                         scrollDirection: Axis.horizontal,
@@ -211,6 +251,49 @@ class ControlBottomAppBar extends ConsumerWidget {
   }
 }
 
+class AddToAlbumTitleRow extends StatelessWidget {
+  const AddToAlbumTitleRow({
+    super.key,
+    required this.onCreateNewAlbum,
+  });
+
+  final VoidCallback? onCreateNewAlbum;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            "common_add_to_album",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+            ),
+          ).tr(),
+          TextButton.icon(
+            onPressed: onCreateNewAlbum,
+            icon: Icon(
+              Icons.add,
+              color: context.primaryColor,
+            ),
+            label: Text(
+              "common_create_new_album",
+              style: TextStyle(
+                color: context.primaryColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ).tr(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class DeleteLocalOnlyDialog extends StatelessWidget {
   final bool showWarning;
   final void Function(bool onlyMerged) onDeleteLocal;
@@ -224,7 +307,9 @@ class DeleteLocalOnlyDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.all(Radius.circular(10)),
+      ),
       title: const Text("delete_dialog_title").tr(),
       content: Text(
         showWarning
@@ -270,49 +355,6 @@ class DeleteLocalOnlyDialog extends StatelessWidget {
           ).tr(),
         ),
       ],
-    );
-  }
-}
-
-class AddToAlbumTitleRow extends StatelessWidget {
-  const AddToAlbumTitleRow({
-    super.key,
-    required this.onCreateNewAlbum,
-  });
-
-  final VoidCallback? onCreateNewAlbum;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Text(
-            "common_add_to_album",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-            ),
-          ).tr(),
-          TextButton.icon(
-            onPressed: onCreateNewAlbum,
-            icon: Icon(
-              Icons.add,
-              color: context.primaryColor,
-            ),
-            label: Text(
-              "common_create_new_album",
-              style: TextStyle(
-                color: context.primaryColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ).tr(),
-          ),
-        ],
-      ),
     );
   }
 }
