@@ -181,6 +181,21 @@ export class MediaService {
     return path;
   }
 
+  async handleKeyframesExtractions({ id }: IEntityJob) {
+    //TODO
+    /// Extract some key frames here
+    const keyframes = ["00:00:01", "00:00:04", "00:00:10"]
+    const [asset] = await this.assetRepository.getByIds([id]);
+    const keyframesPaths = await Promise.all(keyframes.map(async (frame) => {
+      const outputPath = StorageCore.getKeyframesPath(asset, frame.replaceAll(':', ''));
+      this.storageCore.ensureFolders(outputPath);
+      await this.mediaRepository.extractFrame(asset.originalPath, frame, outputPath);
+      return outputPath;
+    }));
+
+    return true
+  }
+
   async handleGenerateWebpThumbnail({ id }: IEntityJob) {
     const [asset] = await this.assetRepository.getByIds([id]);
     if (!asset) {
@@ -298,8 +313,7 @@ export class MediaService {
     const isTargetAudioCodec = audioStream == null || audioStream.codecName === ffmpegConfig.targetAudioCodec;
 
     this.logger.verbose(
-      `${asset.id}: AudioCodecName ${audioStream?.codecName ?? 'None'}, AudioStreamCodecType ${
-        audioStream?.codecType ?? 'None'
+      `${asset.id}: AudioCodecName ${audioStream?.codecName ?? 'None'}, AudioStreamCodecType ${audioStream?.codecType ?? 'None'
       }, containerExtension ${containerExtension}`,
     );
 

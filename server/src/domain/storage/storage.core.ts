@@ -10,6 +10,7 @@ export enum StorageFolder {
   UPLOAD = 'upload',
   PROFILE = 'profile',
   THUMBNAILS = 'thumbs',
+  KEYFRAMES = 'keyframes',
 }
 
 export interface MoveRequest {
@@ -31,7 +32,7 @@ export class StorageCore {
     private moveRepository: IMoveRepository,
     private personRepository: IPersonRepository,
     private repository: IStorageRepository,
-  ) {}
+  ) { }
 
   static create(
     assetRepository: IAssetRepository,
@@ -64,6 +65,10 @@ export class StorageCore {
 
   static getPersonThumbnailPath(person: PersonEntity) {
     return StorageCore.getNestedPath(StorageFolder.THUMBNAILS, person.ownerId, `${person.id}.jpeg`);
+  }
+
+  static getKeyframesPath(asset: AssetEntity, timestampFrame: string) {
+    return StorageCore.getNestedPath(StorageFolder.KEYFRAMES, asset.id, `${timestampFrame}.jpeg`);
   }
 
   static getLargeThumbnailPath(asset: AssetEntity) {

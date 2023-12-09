@@ -22,6 +22,7 @@ import { SharedLinkEntity } from './shared-link.entity';
 import { SmartInfoEntity } from './smart-info.entity';
 import { TagEntity } from './tag.entity';
 import { UserEntity } from './user.entity';
+import { AssetKeyframeEntity } from './asset-keyframes.entity';
 
 export const ASSET_CHECKSUM_CONSTRAINT = 'UQ_assets_owner_library_checksum';
 
@@ -163,6 +164,9 @@ export class AssetEntity {
 
   @OneToOne(() => AssetJobStatusEntity, (jobStatus) => jobStatus.asset, { nullable: true })
   jobStatus?: AssetJobStatusEntity;
+
+  @OneToMany(() => AssetKeyframeEntity, (assetKeyframe) => assetKeyframe.asset)
+  keyframes!: AssetKeyframeEntity[];
 }
 
 export enum AssetType {

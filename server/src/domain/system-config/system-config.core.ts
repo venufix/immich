@@ -56,6 +56,7 @@ export const defaults = Object.freeze<SystemConfig>({
     [QueueName.MIGRATION]: { concurrency: 5 },
     [QueueName.THUMBNAIL_GENERATION]: { concurrency: 5 },
     [QueueName.VIDEO_CONVERSION]: { concurrency: 1 },
+    [QueueName.KEYFRANES]: { concurrency: 2 }
   },
   machineLearning: {
     enabled: process.env.IMMICH_MACHINE_LEARNING_ENABLED !== 'false',
@@ -155,7 +156,7 @@ export class SystemConfigCore {
 
   public config$ = new Subject<SystemConfig>();
 
-  private constructor(private repository: ISystemConfigRepository) {}
+  private constructor(private repository: ISystemConfigRepository) { }
 
   static create(repository: ISystemConfigRepository) {
     if (!instance) {

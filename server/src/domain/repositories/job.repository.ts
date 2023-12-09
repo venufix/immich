@@ -26,6 +26,10 @@ export interface QueueStatus {
 }
 
 export type JobItem =
+
+  //Keyframes
+  | { name: JobName.EXTRACT_KEYFRAMES; data: IEntityJob }
+
   // Transcoding
   | { name: JobName.QUEUE_VIDEO_CONVERSION; data: IBaseJob }
   | { name: JobName.VIDEO_CONVERSION; data: IEntityJob }

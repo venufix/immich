@@ -176,6 +176,10 @@ export class JobService {
       case JobName.STORAGE_TEMPLATE_MIGRATION_SINGLE:
         if (item.data.source === 'upload') {
           await this.jobRepository.queue({ name: JobName.GENERATE_JPEG_THUMBNAIL, data: item.data });
+          const [asset] = await this.assetRepository.getByIds([item.data.id]);
+          if (asset.type === AssetType.VIDEO) {
+            await this.jobRepository.queue({ name: JobName.EXTRACT_KEYFRAMES, data: item.data });
+          }
         }
         break;
 

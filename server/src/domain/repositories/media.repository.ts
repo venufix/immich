@@ -79,4 +79,5 @@ export interface IMediaRepository {
   // video
   probe(input: string): Promise<VideoInfo>;
   transcode(input: string, output: string | Writable, options: TranscodeOptions): Promise<void>;
+  extractFrame(input: string, timestamp: string, output: string): Promise<void>;
 }

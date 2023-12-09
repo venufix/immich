@@ -38,10 +38,11 @@ export class AppService {
     private storageService: StorageService,
     private systemConfigService: SystemConfigService,
     private userService: UserService,
-  ) {}
+  ) { }
 
   async init() {
     await this.jobService.registerHandlers({
+      [JobName.EXTRACT_KEYFRAMES]: (data) => this.mediaService.handleKeyframesExtractions(data),
       [JobName.ASSET_DELETION]: (data) => this.assetService.handleAssetDeletion(data),
       [JobName.ASSET_DELETION_CHECK]: () => this.assetService.handleAssetDeletionCheck(),
       [JobName.DELETE_FILES]: (data: IDeleteFilesJob) => this.storageService.handleDeleteFiles(data),

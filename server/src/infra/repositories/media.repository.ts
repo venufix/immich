@@ -13,6 +13,7 @@ sharp.concurrency(0);
 export class MediaRepository implements IMediaRepository {
   private logger = new Logger(MediaRepository.name);
 
+
   crop(input: string | Buffer, options: CropOptions): Promise<Buffer> {
     return sharp(input, { failOn: 'none' })
       .pipelineColorspace('rgb16')
@@ -34,6 +35,16 @@ export class MediaRepository implements IMediaRepository {
       .withMetadata({ icc: options.colorspace })
       .toFormat(options.format, { quality: options.quality, chromaSubsampling })
       .toFile(output);
+  }
+
+  extractFrame(input: string, timestamp: string, output: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      ffmpeg()
+        .addInput(input)
+        .addOutput(output)
+        .addOptions('-ss', timestamp)
+        .addOptions('-frames:v', '1').on('error', reject).on('end', resolve).run();
+    });
   }
 
   async probe(input: string): Promise<VideoInfo> {

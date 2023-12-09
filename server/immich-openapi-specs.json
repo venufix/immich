@@ -6382,6 +6382,9 @@
           "clipEncoding": {
             "$ref": "#/components/schemas/JobStatusDto"
           },
+          "keyframes": {
+            "$ref": "#/components/schemas/JobStatusDto"
+          },
           "library": {
             "$ref": "#/components/schemas/JobStatusDto"
           },
@@ -6425,7 +6428,8 @@
           "search",
           "recognizeFaces",
           "sidecar",
-          "library"
+          "library",
+          "keyframes"
         ],
         "type": "object"
       },
@@ -7602,7 +7606,8 @@
           "migration",
           "search",
           "sidecar",
-          "library"
+          "library",
+          "keyframes"
         ],
         "type": "string"
       },
@@ -8909,6 +8914,9 @@
           "clipEncoding": {
             "$ref": "#/components/schemas/JobSettingsDto"
           },
+          "keyframes": {
+            "$ref": "#/components/schemas/JobSettingsDto"
+          },
           "library": {
             "$ref": "#/components/schemas/JobSettingsDto"
           },
@@ -8952,7 +8960,8 @@
           "search",
           "recognizeFaces",
           "sidecar",
-          "library"
+          "library",
+          "keyframes"
         ],
         "type": "object"
       },
