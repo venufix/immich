@@ -1,0 +1,10 @@
+{
+    "name": "immich_devcontainer",
+    "dockerComposeFile": [
+        "./docker-compose.yml"
+    ],
+    "service": "devcontainer",
+    // "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+    "shutdownAction": "stopCompose",
+}
