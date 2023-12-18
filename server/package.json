@@ -17,6 +17,7 @@
     "nest": "nest",
     "start:dev": "nest start --watch --",
     "start:debug": "nest start --debug 0.0.0.0:9230 --watch --",
+    "microservices:debug": "nest start --debug 0.0.0.0:9231 --watch -- microservices",
     "lint": "eslint \"src/**/*.ts\" \"test/**/*.ts\" --max-warnings 0",
     "lint:fix": "npm run lint -- --fix",
     "check": "tsc --noEmit",

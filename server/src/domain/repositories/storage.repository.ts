@@ -37,4 +37,5 @@ export interface IStorageRepository {
   readdir(folder: string): Promise<string[]>;
   stat(filepath: string): Promise<Stats>;
   crawl(crawlOptions: CrawlOptionsDto): Promise<string[]>;
+  asyncCrawl(crawlOptions: CrawlOptionsDto): AsyncGenerator<any>;
 }

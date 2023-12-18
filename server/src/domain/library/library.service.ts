@@ -374,6 +374,29 @@ export class LibraryService {
     }
 
     this.logger.verbose(`Refreshing library: ${job.id}`);
+    for await (const assetPath of this.storageRepository.asyncCrawl({
+      pathsToCrawl: library.importPaths,
+      exclusionPatterns: library.exclusionPatterns,
+    })) {
+      console.log(assetPath);
+    }
+
+    return true;
+  }
+  async handleQueueAssetRefreshOld(job: ILibraryRefreshJob): Promise<boolean> {
+    const library = await this.repository.get(job.id);
+    if (!library || library.type !== LibraryType.EXTERNAL) {
+      this.logger.warn('Can only refresh external libraries');
+      return false;
+    }
+
+    const user = await this.userRepository.get(library.ownerId, {});
+    if (!user?.externalPath) {
+      this.logger.warn('User has no external path set, cannot refresh library');
+      return false;
+    }
+
+    this.logger.verbose(`Refreshing library: ${job.id}`);
     const crawledAssetPaths = (
       await this.storageRepository.crawl({
         pathsToCrawl: library.importPaths,

@@ -11,6 +11,7 @@ import archiver from 'archiver';
 import { constants, createReadStream, existsSync, mkdirSync } from 'fs';
 import fs, { readdir, writeFile } from 'fs/promises';
 import { glob } from 'glob';
+import { stream as fgStream } from 'fast-glob';
 import mv from 'mv';
 import { promisify } from 'node:util';
 import path from 'path';
@@ -114,6 +115,31 @@ export class FilesystemProvider implements IStorageRepository {
       free: stats.bfree * stats.bsize,
       total: stats.blocks * stats.bsize,
     };
+  }
+
+  async *asyncCrawl(crawlOptions: CrawlOptionsDto): AsyncGenerator<any> {
+    const { pathsToCrawl, exclusionPatterns, includeHidden } = crawlOptions;
+
+    if (!pathsToCrawl) {
+      return;
+    }
+
+    const base = pathsToCrawl.length === 1 ? pathsToCrawl[0] : `{${pathsToCrawl.join(',')}}`;
+    const extensions = `*{${mimeTypes.getSupportedFileExtensions().join(',')}}`;
+
+    // Use fast-glob with streaming API
+    const stream = fgStream(`${base}/**/${extensions}`, {
+      absolute: true,
+      onlyFiles: true,
+      dot: includeHidden,
+      ignore: exclusionPatterns,
+      objectMode: false, // Enable object mode for streaming
+    });
+
+    // Handle each match as it comes
+    for await (const filePath of stream) {
+      yield filePath;
+    }
   }
 
   crawl(crawlOptions: CrawlOptionsDto): Promise<string[]> {
